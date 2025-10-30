@@ -72,11 +72,13 @@ class OficioController extends Controller
 			'oficios.respuesta',
 			'oficios.descripcion_rechazo_jefe',
 			DB::raw("RIGHT(oficios.archivo_respuesta, 3) as extension"),
+			'respuestas_oficio.nombre as destinatario'
     	)
     	->join('cat_des','cat_des.id','oficios.dep_ua')
     	->join('cat_areas','cat_areas.id','oficios.area')
     	->leftJoin('cat_procesos','cat_procesos.id','oficios.proceso_impacta')
     	->Leftjoin('users','users.id','oficios.id_usuario')
+		->leftJoin('respuestas_oficio','respuestas_oficio.id_oficio','oficios.id')
     	->whereRaw("1=1 $where")
 		->orWhere("area", 1)
     	->orderBy('id')
@@ -436,8 +438,6 @@ class OficioController extends Controller
         $oficio = Oficio::find($request->id);
 		$folio = $oficio->ingreso == 'Email' ? $oficio->num_folio : $oficio->num_oficio;
 		$usuario = infoUsuario($oficio->id_usuario);
-
-		
 		
 		if(\Auth::user()->rol == 3){
 			$oficio->descripcion_rechazo_jefe = $request->descripcion;

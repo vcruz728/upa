@@ -147,13 +147,13 @@ return [
     */
 
     'attributes' => [
-        'correo' => 'correo electrónico',
-        'telefono' => 'teléfono de contacto',
-        'nombre_empresa' => 'nombre de tu empresa',
-        'actividad_giro' => 'actividad o giro',
-        'direccion_fiscal' => 'dirección fiscal',
-        'direccion_oficial' => 'dirección oficial',
-        'archivo' => 'permiso del ayuntamiento',
+        'password' => 'contraseña',
+        'dep_ua' => 'Dependencia o Unidad Académica',
+        'num_oficio' => 'número de oficio',
+        'area' => 'área',
+        'proceso_impacta' => 'proceso al que impacta',
+        'descripcion' => 'descripción',
+        'email' => 'correo electrónico',
     ],
 
 ];

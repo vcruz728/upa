@@ -158,7 +158,9 @@ const Header = () => {
                                                 <div className="dropdown-divider m-0"></div>
                                                 <Link
                                                     className="dropdown-item"
-                                                    href="/mi-perfil"
+                                                    href={getFullUrl(
+                                                        "/mi-perfil"
+                                                    )}
                                                 >
                                                     <i className="dropdown-icon fe fe-user"></i>{" "}
                                                     Mi perfil

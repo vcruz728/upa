@@ -141,7 +141,7 @@ class RecepcionController extends Controller
 			if(!isset($request->id)){
 				$usuario = User::where('rol', 3)->where('id_area', $request->area)->first();
 				iBitacoraOficio($ofi->id,"Recepción de oficio: $folio", $descriponI, "fa fa-file-o", "success");
-	
+
 				if(!empty($usuario)){
 					Mail::to($usuario->email)->later(now()->addSeconds(2), new Nuevo($usuario->name, $folio, $evidencia));
 				}

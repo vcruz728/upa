@@ -2,36 +2,27 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Http\Request;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        if (app()->environment('production')) {
-            URL::forceScheme('https');
+        // Respeta el esquema que te pasa Caddy
+        if (request()->header('x-forwarded-proto')) {
+            URL::forceScheme(request()->header('x-forwarded-proto'));
         }
-        
-        // Forzar el esquema HTTP para desarrollo local
-        if (config('app.env') === 'local') {
-            URL::forceScheme('http');
-        }
-        
-        // Configurar la URL raíz para subcarpetas
-        if (config('app.env') === 'local') {
-            URL::forceRootUrl(config('app.url'));
+
+        // Si tu app vive bajo /vd:
+        if (config('app.url')) {
+            URL::forceRootUrl(config('app.url')); // p.ej. http://localhost/vd
         }
     }
 }

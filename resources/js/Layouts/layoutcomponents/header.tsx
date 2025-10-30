@@ -1,137 +1,159 @@
-import { useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Nav, Dropdown, Navbar } from "react-bootstrap";
 import { Link, usePage } from "@inertiajs/react";
 import { Imagesdata } from "../../commondata/commonimages";
 
-const SideMenuIcon: any = () => {
-    //leftsidemenu
-    document.querySelector(".app")?.classList.toggle("sidenav-toggled");
-};
-// Darkmode
-const DarkMode = () => {
-    if (document.querySelector("body")?.classList.contains("dark-mode")) {
-        document.querySelector("body")?.classList.remove("dark-mode");
-
-        localStorage.removeItem("sashdarktheme");
-        localStorage.removeItem("sashlightmode");
-        localStorage.removeItem("sashlightheader");
-        localStorage.removeItem("sashlighmenu");
-    } else {
-        document.querySelector("body")?.classList.add("dark-mode");
-        localStorage.setItem("sashdarktheme", "true");
-        localStorage.removeItem("sashlightmode");
-        localStorage.removeItem("sashlightheader");
-        localStorage.removeItem("sashlighmenu");
-    }
-};
-
-// FullScreen
-var elem: any = document.documentElement;
-var i = true;
-const Fullscreen: any = (vale: any) => {
-    switch (vale) {
-        case true:
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen();
-            } else if (elem.webkitRequestFullscreen) {
-                /* Safari */
-                elem.webkitRequestFullscreen();
-            } else if (elem.msRequestFullscreen) {
-                /* IE11 */
-                elem.msRequestFullscreen();
-            }
-            i = false;
-            break;
-        case false:
-            document.exitFullscreen();
-            i = true;
-            break;
-    }
-};
-
-// SwitcherMenu
-
-const SidSwitcherIcon: any = () => {
-    //leftsidemenu
-    document.querySelector(".demo_changer")?.classList.toggle("active");
-    let Rightside: any = document.querySelector(".demo_changer");
-    Rightside.style.insetInlineEnd = "0px";
-};
-
 const Header = () => {
-    document.querySelector(".main-content")?.addEventListener("click", () => {
-        document.querySelector(".search-result")?.classList.add("d-none");
-    });
-
     const user = usePage().props.auth.user;
 
+    // --- Handlers memorizados ---
+    const handleSideMenuToggle = useCallback(() => {
+        document.querySelector(".app")?.classList.toggle("sidenav-toggled");
+    }, []);
+
+    const handleDarkMode = useCallback(() => {
+        const body = document.body;
+        if (body.classList.contains("dark-mode")) {
+            body.classList.remove("dark-mode");
+            localStorage.removeItem("sashdarktheme");
+            localStorage.removeItem("sashlightmode");
+            localStorage.removeItem("sashlightheader");
+            // posible typo original: "sashlighmenu"
+            localStorage.removeItem("sashlightmenu");
+        } else {
+            body.classList.add("dark-mode");
+            localStorage.setItem("sashdarktheme", "true");
+            localStorage.removeItem("sashlightmode");
+            localStorage.removeItem("sashlightheader");
+            localStorage.removeItem("sashlightmenu");
+        }
+    }, []);
+
+    // Fullscreen state control (sin variable global)
+    const isFsRef = useRef(false);
+    const fsToggle = useCallback(async () => {
+        const doc: any = document;
+        const el: any = document.documentElement;
+
+        if (!isFsRef.current) {
+            try {
+                if (el.requestFullscreen) await el.requestFullscreen();
+                else if (el.webkitRequestFullscreen)
+                    await el.webkitRequestFullscreen();
+                else if (el.msRequestFullscreen) await el.msRequestFullscreen();
+                isFsRef.current = true;
+            } catch {}
+        } else {
+            try {
+                if (doc.exitFullscreen) await doc.exitFullscreen();
+                else if (doc.webkitExitFullscreen)
+                    await doc.webkitExitFullscreen();
+                else if (doc.msExitFullscreen) await doc.msExitFullscreen();
+            } finally {
+                isFsRef.current = false;
+            }
+        }
+    }, []);
+
+    const handleSwitcherToggle = useCallback(() => {
+        const right = document.querySelector<HTMLDivElement>(".demo_changer");
+        right?.classList.toggle("active");
+        if (right) right.style.insetInlineEnd = "0px";
+    }, []);
+
+    // Ocultar resultados de búsqueda al hacer click en main-content (una sola vez)
+    useEffect(() => {
+        const main = document.querySelector(".main-content");
+        const hide = () =>
+            document.querySelector(".search-result")?.classList.add("d-none");
+        main?.addEventListener("click", hide);
+        return () => main?.removeEventListener("click", hide);
+    }, []);
+
+    // --- RENDER ---
     return (
         <div className="">
             <div className="header sticky app-header header1">
                 <div className="container-fluid main-container">
                     <div className="d-flex">
                         <div
-                            aria-label="Hide Sidebar"
+                            aria-label="Ocultar/mostrar sidebar"
                             className="app-sidebar__toggle"
                             data-bs-toggle="sidebar"
-                            onClick={() => SideMenuIcon()}
+                            onClick={handleSideMenuToggle}
                             style={{ cursor: "pointer" }}
                         />
-                        <Link className="logo-horizontal " href="/dashboard">
-                            <img
-                                src={Imagesdata("buapBlanco")}
-                                className="header-brand-img desktop-logo"
-                                alt="logo"
-                            />
-                            <img
-                                src={Imagesdata("buapBlanco")}
-                                className="header-brand-img light-logo1"
-                                alt="logo"
-                            />
+
+                        <Link
+                            className="logo-horizontal"
+                            href="/dashboard"
+                            aria-label="Inicio"
+                        >
+                            {/* Contenedor con tamaño fijo para evitar CLS */}
+                            <span
+                                className="header-brand"
+                                style={{
+                                    display: "inline-block",
+                                    width: 160,
+                                    height: 40,
+                                }}
+                            >
+                                {/* Si tienes versión webp, puedes envolver en <picture>. Aquí mantengo tus dos <img> pero con tamaño fijo */}
+                                <img
+                                    src={Imagesdata("buapBlanco")}
+                                    className="header-brand-img desktop-logo"
+                                    alt="BUAP"
+                                    width={160}
+                                    height={40}
+                                    decoding="async"
+                                />
+                                <img
+                                    src={Imagesdata("buapBlanco")}
+                                    className="header-brand-img light-logo1"
+                                    alt="BUAP"
+                                    width={160}
+                                    height={40}
+                                    decoding="async"
+                                />
+                            </span>
                         </Link>
 
                         <Navbar className="d-flex order-lg-2 ms-auto header-right-icons">
                             <Navbar.Toggle className="d-lg-none ms-auto header2">
-                                <span className="navbar-toggler-icon fe fe-more-vertical"></span>
+                                <span className="navbar-toggler-icon fe fe-more-vertical" />
                             </Navbar.Toggle>
 
                             <div className="responsive-navbar p-0">
-                                <Navbar.Collapse
-                                    className=""
-                                    id="navbarSupportedContent-4"
-                                >
+                                <Navbar.Collapse id="navbarSupportedContent-4">
                                     <div className="d-flex order-lg-2">
                                         {/* Dark Mode */}
-
-                                        <div className="dropdown  d-flex">
+                                        <div className="dropdown d-flex">
                                             <Nav.Link
                                                 className="nav-link icon theme-layout nav-link-bg layout-setting"
-                                                onClick={() => DarkMode()}
+                                                onClick={handleDarkMode}
+                                                aria-label="Cambiar tema"
                                             >
                                                 <span className="dark-layout">
-                                                    <i className="fe fe-moon"></i>
+                                                    <i className="fe fe-moon" />
                                                 </span>
                                                 <span className="light-layout">
-                                                    <i className="fe fe-sun"></i>
+                                                    <i className="fe fe-sun" />
                                                 </span>
                                             </Nav.Link>
                                         </div>
 
-                                        {/* <!-- Shopping-Cart Theme-Layout --> */}
-
-                                        {/* FullScreen button */}
-
+                                        {/* FullScreen */}
                                         <div className="dropdown d-flex">
                                             <Nav.Link
                                                 className="nav-link icon full-screen-link nav-link-bg"
-                                                onClick={() => Fullscreen(i)}
+                                                onClick={fsToggle}
+                                                aria-label="Pantalla completa"
                                             >
-                                                <i className="fe fe-minimize fullscreen-button"></i>
+                                                <i className="fe fe-minimize fullscreen-button" />
                                             </Nav.Link>
                                         </div>
 
-                                        {/* Profile  */}
-
+                                        {/* Perfil */}
                                         <Dropdown className="d-flex profile-1">
                                             <Dropdown.Toggle
                                                 variant=""
@@ -139,8 +161,12 @@ const Header = () => {
                                             >
                                                 <img
                                                     src={Imagesdata("user")}
-                                                    alt="profile-user"
-                                                    className="avatar  profile-user brround cover-image"
+                                                    alt="Usuario"
+                                                    className="avatar profile-user brround cover-image"
+                                                    width={36}
+                                                    height={36}
+                                                    decoding="async"
+                                                    loading="lazy"
                                                 />
                                             </Dropdown.Toggle>
                                             <Dropdown.Menu className="dropdown-menu-end dropdown-menu-arrow">
@@ -150,7 +176,7 @@ const Header = () => {
                                                             {user.name}
                                                         </h5>
                                                         <small className="text-muted">
-                                                            {/* Sub titulo */}
+                                                            {/* Subtítulo opcional */}
                                                         </small>
                                                     </div>
                                                 </div>
@@ -162,7 +188,6 @@ const Header = () => {
                                                     <i className="dropdown-icon fe fe-user"></i>{" "}
                                                     Mi perfil
                                                 </Link>
-
                                                 <Link
                                                     className="dropdown-item"
                                                     href={route("logout")}
@@ -177,13 +202,14 @@ const Header = () => {
                                 </Navbar.Collapse>
                             </div>
 
-                            {/* Switcher  */}
-
+                            {/* Switcher */}
                             <div
                                 className="demo-icon nav-link icon"
-                                onClick={() => SidSwitcherIcon()}
+                                onClick={handleSwitcherToggle}
+                                role="button"
+                                aria-label="Abrir switcher"
                             >
-                                <i className="fe fe-settings fa-spin  text_primary"></i>
+                                <i className="fe fe-settings fa-spin text_primary" />
                             </div>
                         </Navbar>
                     </div>

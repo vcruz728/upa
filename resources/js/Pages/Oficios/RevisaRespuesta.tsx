@@ -20,60 +20,64 @@ import VerPdf from "@/types/VerPdf";
 import { Head } from "@inertiajs/react";
 import Swal from "sweetalert2";
 import InputError from "../InputError";
+import DatePicker from "react-datepicker";
+import { Fecha } from "../../commondata/Fecha";
+import "react-datepicker/dist/react-datepicker.css";
+import toast from "react-hot-toast";
 
 type FormIn = {
     id: number;
-    descripcion: string;
-    archivo: File | null;
-    enrutar: string;
+    fecha: string | null;
 };
 
-export default function FormOficio({
+export default function RevisaRespuesta({
     status,
     oficio,
     archivos,
 }: {
     status?: string;
-    oficio: any;
-    archivos: any[];
+    oficio: any | null; // <- puede venir null
+    archivos: any[] | null; // <- puede venir null
 }) {
     const user = usePage().props.auth.user;
+
+    // Normalizamos para evitar "Cannot read properties of null"
+    const o = oficio ?? {};
+    const adjuntos = archivos ?? [];
+
     const [show, setShow] = useState<boolean>(false);
-    const [show2, setShow2] = useState(false);
     const [show3, setShow3] = useState(false);
     const [pdf, setPdf] = useState("");
     const [tipo, setTipo] = useState("pdf");
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const formResponde = useForm<FormIn>({
-        id: 0,
-        descripcion: "",
-        archivo: null,
-        enrutar: "SI",
-    });
+    // Helper seguro para fechas
+    function parseLocalDate(dateString?: string | null): Date | null {
+        if (!dateString) return null;
+        const [year, month, day] = dateString.split("-");
+        const y = Number(year),
+            m = Number(month),
+            d = Number(day);
+        if (!y || !m || !d) return null;
+        return new Date(y, m - 1, d);
+    }
 
-    const submitResp: FormEventHandler = (e) => {
-        e.preventDefault();
-        Swal.fire({
-            title: "¿Está seguro?",
-            text: "Una vez guardada la respuesta, esta no se podrá editar",
-            icon: "warning",
-            showDenyButton: true,
-            showCancelButton: false,
-            confirmButtonText: "Sí, estoy seguro",
-            denyButtonText: `Cancelar`,
-            customClass: {
-                container: "swalSuperior",
-            },
-        }).then((result) => {
-            /* Read more about isConfirmed, isDenied below */
-            if (result.isConfirmed) {
-                formResponde.post(route("respondeOFicio"));
-            } else {
-                formResponde.cancel();
-            }
-        });
+    // Helper para abrir visor PDF solo si hay URL
+    const openPdf = (url?: string | null, ext?: string | null) => {
+        const clean = (url || "").trim();
+        if (!clean) {
+            toast.error("No hay archivo para mostrar.");
+            return;
+        }
+        setPdf(clean);
+        setTipo((ext || "pdf").toLowerCase());
+        setShow(true);
     };
+
+    // Forms inicializados con valores seguros
+    const formFecha = useForm<FormIn>({
+        id: o?.id_respuesta ?? 0,
+        fecha: o?.fecha_respuesta ?? Fecha,
+    });
 
     const formRechazo = useForm({
         id: 0,
@@ -82,6 +86,7 @@ export default function FormOficio({
 
     const submitRechaza: FormEventHandler = (e) => {
         e.preventDefault();
+        if (!o?.id) return;
         Swal.fire({
             title: "¿Está seguro?",
             text: "Se notificará al colaborador para que vuelva a responder el oficio.",
@@ -90,9 +95,7 @@ export default function FormOficio({
             showCancelButton: false,
             confirmButtonText: "Sí, estoy seguro",
             denyButtonText: `Cancelar`,
-            customClass: {
-                container: "swalSuperior",
-            },
+            customClass: { container: "swalSuperior" },
         }).then((result) => {
             if (result.isConfirmed) {
                 formRechazo.put(route("rechazarResp"));
@@ -102,7 +105,28 @@ export default function FormOficio({
         });
     };
 
+    const submitFecha: FormEventHandler = (e) => {
+        e.preventDefault();
+        if (!o?.id) return;
+        formFecha.post(route("oficios.cambiaFecha"), {
+            onSuccess: () => {
+                toast(
+                    "Correcto: Se actualizó la fecha de respuesta del oficio.",
+                    {
+                        style: {
+                            padding: "25px",
+                            color: "#fff",
+                            backgroundColor: "#29bf74",
+                        },
+                        position: "top-center",
+                    }
+                );
+            },
+        });
+    };
+
     const autorizaResp = () => {
+        if (!o?.id) return;
         Swal.fire({
             title: "¿Está seguro?",
             text: "El oficio ya no se podrá editar y se marcará como finalizado",
@@ -113,27 +137,18 @@ export default function FormOficio({
             denyButtonText: `Cancelar`,
         }).then((result) => {
             if (result.isConfirmed) {
-                router.put(route("oficios.aceptResp", { id: oficio.id }));
+                router.put(route("oficios.aceptResp", { id: o.id }));
             }
         });
     };
 
-    const handleChangeS = (e: any) => {
-        const target = e.target as HTMLInputElement;
-        if (target.files) {
-            formResponde.setData("archivo", target.files[0]);
-        }
+    const verArchivo = (url: string, tipo: number, extension: string) => {
+        if (tipo === 1) openPdf(url, extension);
+        else window.open(url, "_blank");
     };
 
-    const verArchivo = (url: string, tipo: number, extension: string) => {
-        if (tipo == 1) {
-            setPdf(url);
-            setShow(true);
-            setTipo(extension);
-        } else {
-            window.open(url, "_blank");
-        }
-    };
+    const ingresoFisico = o?.ingreso === "Físico" || o?.ingreso === "Fisico";
+    const ingresoEmail = o?.ingreso === "Email";
 
     return (
         <AppLayout>
@@ -155,235 +170,246 @@ export default function FormOficio({
                         },
                     ]}
                 />
-                <Row>
-                    <Col lg={12} xl={6}>
-                        <Card>
-                            <Card.Header>
-                                <Card.Title as="h3">
-                                    Información del oficio
-                                </Card.Title>
-                            </Card.Header>
-                            <Card.Body>
-                                {status && (
-                                    <Alert
-                                        variant="success"
-                                        className="alert-dismissible"
-                                    >
-                                        {status}
-                                    </Alert>
-                                )}
 
-                                <div className="form-row">
-                                    <Col xl={4} md={6} className="mb-4">
-                                        <Form.Group>
-                                            <Form.Label>
-                                                Ingreso de la solicitud
-                                            </Form.Label>
-                                            <div className="custom-controls-stacked">
-                                                <label className="custom-control custom-radio-md">
-                                                    <input
-                                                        type="radio"
-                                                        className="custom-control-input"
-                                                        name="ingreso"
-                                                        defaultValue="Físico"
-                                                        defaultChecked={
-                                                            oficio.ingreso ==
-                                                            "Físico"
-                                                                ? true
-                                                                : false
-                                                        }
-                                                        disabled
-                                                    />
-                                                    <span className="custom-control-label">
-                                                        Físico
-                                                    </span>
-                                                </label>
-                                                <label
-                                                    className="custom-control custom-radio-md"
-                                                    style={{
-                                                        marginLeft: "2rem",
-                                                    }}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        className="custom-control-input"
-                                                        name="ingreso"
-                                                        defaultValue="Email"
-                                                        defaultChecked={
-                                                            oficio.ingreso ==
-                                                            "Email"
-                                                                ? true
-                                                                : false
-                                                        }
-                                                        disabled
-                                                    />
-                                                    <span className="custom-control-label">
-                                                        Email
-                                                    </span>
-                                                </label>
-                                            </div>
-                                        </Form.Group>
-                                    </Col>
-                                </div>
+                {/* Si no hay oficio, mostramos alerta y salimos */}
+                {!o?.id ? (
+                    <Alert variant="warning" className="mx-3">
+                        No se encontró información del oficio.
+                    </Alert>
+                ) : (
+                    <Row>
+                        <Col lg={12} xl={6}>
+                            <Card>
+                                <Card.Header>
+                                    <Card.Title as="h3">
+                                        Información del oficio
+                                    </Card.Title>
+                                </Card.Header>
+                                <Card.Body>
+                                    <div className="form-row">
+                                        <Col xl={4} md={6} className="mb-4">
+                                            <Form.Group>
+                                                <Form.Label>
+                                                    Ingreso de la solicitud
+                                                </Form.Label>
+                                                <div className="custom-controls-stacked">
+                                                    <label className="custom-control custom-radio-md">
+                                                        <input
+                                                            type="radio"
+                                                            className="custom-control-input"
+                                                            name="ingreso"
+                                                            defaultValue="Físico"
+                                                            defaultChecked={
+                                                                ingresoFisico
+                                                            }
+                                                            disabled
+                                                        />
+                                                        <span className="custom-control-label">
+                                                            Físico
+                                                        </span>
+                                                    </label>
+                                                    <label
+                                                        className="custom-control custom-radio-md"
+                                                        style={{
+                                                            marginLeft: "2rem",
+                                                        }}
+                                                    >
+                                                        <input
+                                                            type="radio"
+                                                            className="custom-control-input"
+                                                            name="ingreso"
+                                                            defaultValue="Email"
+                                                            defaultChecked={
+                                                                ingresoEmail
+                                                            }
+                                                            disabled
+                                                        />
+                                                        <span className="custom-control-label">
+                                                            Email
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </Form.Group>
+                                        </Col>
+                                    </div>
 
-                                <div className="form-row">
-                                    {oficio.ingreso == "Físico" ? (
+                                    <div className="form-row">
+                                        {ingresoFisico && (
+                                            <Col
+                                                xs={12}
+                                                sm={6}
+                                                xl={4}
+                                                className="mb-3"
+                                            >
+                                                <Form.Label>
+                                                    Número de oficio
+                                                </Form.Label>
+                                                <Form.Control
+                                                    name="num_oficio"
+                                                    defaultValue={
+                                                        o?.num_oficio ?? ""
+                                                    }
+                                                    type="text"
+                                                    disabled
+                                                />
+                                            </Col>
+                                        )}
+
+                                        {ingresoEmail && (
+                                            <Col
+                                                xs={12}
+                                                sm={6}
+                                                xl={4}
+                                                className="mb-3"
+                                            >
+                                                <Form.Label>
+                                                    Número de folio
+                                                </Form.Label>
+                                                <Form.Control
+                                                    type="text"
+                                                    disabled
+                                                    name="num_folio"
+                                                    defaultValue={
+                                                        o?.num_folio ?? ""
+                                                    }
+                                                />
+                                            </Col>
+                                        )}
+
                                         <Col
                                             xs={12}
                                             sm={6}
+                                            md={6}
+                                            lg={6}
                                             xl={4}
                                             className="mb-3"
                                         >
                                             <Form.Label>
-                                                Número de oficio
+                                                Dependencia o Unidad Académica
                                             </Form.Label>
                                             <Form.Control
-                                                name="num_oficio"
-                                                defaultValue={oficio.num_oficio}
+                                                defaultValue={o?.des ?? ""}
                                                 type="text"
                                                 disabled
                                             />
                                         </Col>
-                                    ) : null}
 
-                                    {oficio.ingreso == "Email" ? (
                                         <Col
                                             xs={12}
                                             sm={6}
+                                            md={6}
+                                            lg={6}
                                             xl={4}
                                             className="mb-3"
                                         >
                                             <Form.Label>
-                                                Número de folio
+                                                Área para dar respuesta
                                             </Form.Label>
                                             <Form.Control
+                                                defaultValue={o?.area ?? ""}
                                                 type="text"
                                                 disabled
-                                                name="num_folio"
-                                                defaultValue={oficio.num_folio}
                                             />
+                                        </Col>
+
+                                        <Col
+                                            xs={12}
+                                            sm={6}
+                                            md={6}
+                                            lg={6}
+                                            xl={4}
+                                            className="mb-3"
+                                        >
+                                            <Form.Label>
+                                                Proceso al que impacta
+                                            </Form.Label>
+                                            <Form.Control
+                                                defaultValue={o?.proceso ?? ""}
+                                                type="text"
+                                                disabled
+                                            />
+                                        </Col>
+
+                                        <Col
+                                            xs={12}
+                                            sm={12}
+                                            xl={8}
+                                            style={{ padding: 40 }}
+                                        >
+                                            <span
+                                                className="tag tag-radius tag-round tag-outline-danger"
+                                                onClick={() =>
+                                                    openPdf(o?.archivo, "pdf")
+                                                }
+                                            >
+                                                Click para ver archivo
+                                                <i
+                                                    className="fa fa-file-pdf-o"
+                                                    style={{ padding: 6 }}
+                                                />
+                                            </span>
+                                        </Col>
+                                    </div>
+
+                                    <div className="form-row">
+                                        <Form.Label>
+                                            Breve descripción del asunto:
+                                        </Form.Label>
+                                        <textarea
+                                            className="form-control"
+                                            name="descripcion"
+                                            defaultValue={o?.descripcion ?? ""}
+                                            rows={3}
+                                            disabled
+                                        ></textarea>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+
+                        <Col lg={12} xl={6}>
+                            <Card>
+                                <Card.Header>
+                                    <Card.Title as="h3">
+                                        Respuesta del colaborador
+                                    </Card.Title>
+                                </Card.Header>
+                                <Card.Body>
+                                    {o?.comentario ? (
+                                        <Col xs={12} className="mb-5">
+                                            <Form.Label>
+                                                Breve descripción del rechazo
+                                                por parte de recepción
+                                                documental:
+                                            </Form.Label>
+                                            <textarea
+                                                className="form-control"
+                                                value={o.comentario}
+                                                rows={3}
+                                                disabled
+                                            ></textarea>
                                         </Col>
                                     ) : null}
 
-                                    <Col
-                                        xs={12}
-                                        sm={6}
-                                        md={6}
-                                        lg={6}
-                                        xl={4}
-                                        className="mb-3"
-                                    >
-                                        <Form.Label>
-                                            Dependencia o Unidad Académica
-                                        </Form.Label>
-                                        <Form.Control
-                                            defaultValue={oficio.des}
-                                            type="text"
-                                            disabled
-                                        />
-                                    </Col>
-
-                                    <Col
-                                        xs={12}
-                                        sm={6}
-                                        md={6}
-                                        lg={6}
-                                        xl={4}
-                                        className="mb-3"
-                                    >
-                                        <Form.Label>
-                                            Área para dar respuesta
-                                        </Form.Label>
-                                        <Form.Control
-                                            defaultValue={oficio.area}
-                                            type="text"
-                                            disabled
-                                        />
-                                    </Col>
-                                    <Col
-                                        xs={12}
-                                        sm={6}
-                                        md={6}
-                                        lg={6}
-                                        xl={4}
-                                        className="mb-3"
-                                    >
-                                        <Form.Label>
-                                            Proceso al que impacta
-                                        </Form.Label>
-                                        <Form.Control
-                                            defaultValue={oficio.proceso}
-                                            type="text"
-                                            disabled
-                                        />
-                                    </Col>
-
-                                    <Col
-                                        xs={12}
-                                        sm={12}
-                                        xl={8}
-                                        style={{ padding: 40 }}
-                                    >
-                                        <span
-                                            className="tag tag-radius tag-round tag-outline-danger"
-                                            onClick={() => {
-                                                setPdf(oficio.archivo),
-                                                    setShow(true);
-                                                setTipo("pdf");
-                                            }}
-                                        >
-                                            Click para ver archivo
-                                            <i
-                                                className="fa fa-file-pdf-o"
-                                                style={{ padding: 6 }}
-                                            ></i>
-                                        </span>
-                                    </Col>
-                                </div>
-                                <div className="form-row">
-                                    <Form.Label>
-                                        Breve descripción del asunto:
-                                    </Form.Label>
-                                    <textarea
-                                        className="form-control"
-                                        name="descripcion"
-                                        defaultValue={oficio.descripcion}
-                                        rows={3}
-                                        disabled
-                                    ></textarea>
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col lg={12} xl={6}>
-                        <Card>
-                            <Card.Header>
-                                <Card.Title as="h3">
-                                    Respuesta del colaborador
-                                </Card.Title>
-                            </Card.Header>
-                            <Card.Body>
-                                <div className="form-row">
                                     <Col xs={12} style={{ padding: 40 }}>
                                         <span
                                             className="tag tag-radius tag-round tag-outline-danger"
-                                            onClick={() => {
-                                                setPdf(
-                                                    `imprime/pdf/0/${oficio.id}`
-                                                ),
-                                                    setTipo("pdf");
-                                                setShow(true);
-                                            }}
+                                            onClick={() =>
+                                                openPdf(
+                                                    `imprime/pdf/0/${o.id}`,
+                                                    "pdf"
+                                                )
+                                            }
                                         >
                                             Click para ver archivo
                                             <i
                                                 className="fa fa-file-pdf-o"
                                                 style={{ padding: 6 }}
-                                            ></i>
+                                            />
                                         </span>
                                     </Col>
 
-                                    {archivos.length > 0 ? (
+                                    {adjuntos.length > 0 ? (
                                         <>
                                             <Col xs={12}>
                                                 <table className="table table-bordered table-hover table-striped">
@@ -400,8 +426,8 @@ export default function FormOficio({
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {archivos.map((x) => {
-                                                            return (
+                                                        {adjuntos.map(
+                                                            (x: any) => (
                                                                 <tr key={x.id}>
                                                                     <td>
                                                                         {
@@ -425,8 +451,8 @@ export default function FormOficio({
                                                                         </Button>
                                                                     </td>
                                                                 </tr>
-                                                            );
-                                                        })}
+                                                            )
+                                                        )}
                                                     </tbody>
                                                 </table>
                                             </Col>
@@ -437,12 +463,11 @@ export default function FormOficio({
                                                 <a
                                                     href={route(
                                                         "oficios.downloadFiles",
-                                                        {
-                                                            id: oficio.id,
-                                                        }
+                                                        { id: o.id }
                                                     )}
                                                     target="_BLANK"
                                                     className="btn btn-warning btn-lg mb-1"
+                                                    rel="noreferrer"
                                                 >
                                                     Descargar todos los archivos
                                                     adjuntos&nbsp;&nbsp;
@@ -452,144 +477,124 @@ export default function FormOficio({
                                         </>
                                     ) : null}
 
-                                    <Col
-                                        xs={12}
-                                        xl={6}
-                                        xxl={4}
-                                        className="d-flex justify-content-center"
-                                    >
-                                        <Button
-                                            className="btn-lg mb-1"
-                                            variant="success"
-                                            onClick={autorizaResp}
-                                        >
-                                            {user.rol == 5
-                                                ? "Aceptar respuesta"
-                                                : "Autorizar respuesta"}
-                                        </Button>
-                                    </Col>
+                                    {user.rol == 5 ? (
+                                        <form onSubmit={submitFecha}>
+                                            <Col xs={4}>
+                                                <Form.Label>
+                                                    Seleccione la fecha de
+                                                    respuesta del oficio:
+                                                </Form.Label>
+                                                <DatePicker
+                                                    className="form-control"
+                                                    selected={parseLocalDate(
+                                                        formFecha.data.fecha
+                                                    )}
+                                                    onChange={(date) => {
+                                                        if (date) {
+                                                            const yyyy =
+                                                                date.getFullYear();
+                                                            const mm = String(
+                                                                date.getMonth() +
+                                                                    1
+                                                            ).padStart(2, "0");
+                                                            const dd = String(
+                                                                date.getDate()
+                                                            ).padStart(2, "0");
+                                                            formFecha.setData(
+                                                                "fecha",
+                                                                `${yyyy}-${mm}-${dd}`
+                                                            );
+                                                        }
+                                                    }}
+                                                    dateFormat="yyyy-MM-dd"
+                                                />
+                                            </Col>
+                                            <Col xs={4} className="mt-5">
+                                                <Button
+                                                    className="btn btn-success "
+                                                    type="submit"
+                                                    disabled={!o?.id}
+                                                >
+                                                    Guardar fecha
+                                                </Button>
+                                            </Col>
+                                            <Col xs={12} className="mb-5"></Col>
+                                        </form>
+                                    ) : null}
 
-                                    <Col
-                                        xs={12}
-                                        xl={6}
-                                        xxl={4}
-                                        className="d-flex justify-content-center"
-                                    >
-                                        <Button
-                                            className="btn-lg mb-1"
-                                            variant="danger"
-                                            onClick={() => {
-                                                setShow3(true),
+                                    <div className="form-row">
+                                        <Col
+                                            xs={12}
+                                            xl={6}
+                                            xxl={4}
+                                            className="d-flex justify-content-center"
+                                        >
+                                            <Button
+                                                className="btn-lg mb-1"
+                                                variant="success"
+                                                onClick={autorizaResp}
+                                                disabled={!o?.id}
+                                            >
+                                                {user.rol == 5
+                                                    ? "Aceptar respuesta"
+                                                    : "Autorizar respuesta"}
+                                            </Button>
+                                        </Col>
+
+                                        <Col
+                                            xs={12}
+                                            xl={6}
+                                            xxl={4}
+                                            className="d-flex justify-content-center"
+                                        >
+                                            <Button
+                                                className="btn-lg mb-1"
+                                                variant="danger"
+                                                onClick={() => {
+                                                    setShow3(true);
                                                     formRechazo.setData(
                                                         "id",
-                                                        oficio.id
+                                                        o?.id ?? 0
                                                     );
-                                            }}
-                                        >
-                                            Rechazar respuesta
-                                        </Button>
-                                    </Col>
+                                                }}
+                                                disabled={!o?.id}
+                                            >
+                                                Rechazar respuesta
+                                            </Button>
+                                        </Col>
 
-                                    <Col
-                                        xs={12}
-                                        xl={12}
-                                        xxl={4}
-                                        className="d-flex justify-content-center"
-                                    >
-                                        <Link
-                                            href={route("oficioResponder", {
-                                                id: oficio.id,
-                                            })}
-                                            className="btn btn-primary btn-lg"
+                                        <Col
+                                            xs={12}
+                                            xl={12}
+                                            xxl={4}
+                                            className="d-flex justify-content-center"
                                         >
-                                            {user.rol == 5
-                                                ? "Editar respuesta"
-                                                : "Responder oficio (Ignorando respuesta)"}
-                                        </Link>
-                                    </Col>
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
+                                            <Link
+                                                href={route("oficioResponder", {
+                                                    id: o?.id ?? 0,
+                                                })}
+                                                className={`btn btn-primary btn-lg ${
+                                                    !o?.id ? "disabled" : ""
+                                                }`}
+                                            >
+                                                {user.rol == 5
+                                                    ? "Editar respuesta"
+                                                    : "Responder oficio (Ignorando respuesta)"}
+                                            </Link>
+                                        </Col>
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    </Row>
+                )}
+
                 <VerPdf
                     urlPdf={pdf}
                     show={show}
                     setShow={setShow}
                     tipo={tipo}
                 />
-
-                <Modal size="xl" show={show2} onHide={() => setShow2(false)}>
-                    <ModalHeader>
-                        <ModalTitle as="h5">Responder Oficio</ModalTitle>
-                    </ModalHeader>
-                    <form onSubmit={submitResp}>
-                        <ModalBody>
-                            <Row>
-                                <Col xs={12}>
-                                    <Form.Label>
-                                        Breve descripción de la solución:
-                                    </Form.Label>
-                                    <textarea
-                                        className={
-                                            formResponde.errors.descripcion
-                                                ? "form-control inputError"
-                                                : "form-control"
-                                        }
-                                        name="descripcion"
-                                        value={formResponde.data.descripcion}
-                                        onChange={(e) =>
-                                            formResponde.setData(
-                                                "descripcion",
-                                                e.target.value
-                                            )
-                                        }
-                                        placeholder="Máximo 1000 caracteres"
-                                        rows={2}
-                                    ></textarea>
-                                    <InputError
-                                        className="mt-1"
-                                        message={
-                                            formResponde.errors.descripcion
-                                        }
-                                    />
-                                </Col>
-                                <Col xs={12} sm={6} xl={4}>
-                                    <Form.Label>
-                                        Adjuntar archivo PDF
-                                    </Form.Label>
-                                    <Form.Control
-                                        type="file"
-                                        accept=".pdf"
-                                        className={
-                                            formResponde.errors.archivo
-                                                ? "inputError"
-                                                : ""
-                                        }
-                                        ref={fileInputRef}
-                                        onChange={(e) => handleChangeS(e)}
-                                    />
-
-                                    <InputError
-                                        className="mt-1"
-                                        message={formResponde.errors.archivo}
-                                    />
-                                </Col>
-                            </Row>
-                        </ModalBody>
-                        <ModalFooter>
-                            <Button
-                                variant="secondary"
-                                onClick={() => setShow2(false)}
-                            >
-                                Cancelar
-                            </Button>
-                            <Button variant="primary" type="submit">
-                                Responder oficio
-                            </Button>
-                        </ModalFooter>
-                    </form>
-                </Modal>
 
                 <Modal show={show3} onHide={() => setShow3(false)}>
                     <ModalHeader>
@@ -636,7 +641,11 @@ export default function FormOficio({
                             >
                                 Cancelar
                             </Button>
-                            <Button variant="primary" type="submit">
+                            <Button
+                                variant="primary"
+                                type="submit"
+                                disabled={!o?.id}
+                            >
                                 Rechazar respuesta
                             </Button>
                         </ModalFooter>

@@ -29,7 +29,7 @@ function Dashboard({ errors }: { errors: { error: string } }) {
                 <PageHeader
                     titles="Sistema Administrativo"
                     active="Dashboard 01"
-                    items={["Home"]}
+                    items={[]}
                 />
                 <Row>
                     <Col lg={12} md={12} sm={12} xl={12}>

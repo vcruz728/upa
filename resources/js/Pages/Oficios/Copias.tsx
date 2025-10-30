@@ -1,5 +1,5 @@
 import { useForm, router } from "@inertiajs/react";
-import { FormEventHandler, useRef, useState } from "react";
+import { FormEventHandler, useEffect, useRef, useState } from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import Select, { SelectInstance } from "react-select";
 import InputError from "../InputError";
@@ -31,6 +31,11 @@ const Copias = ({
     const [variables, setVariables] = useState({
         destinatario: 0,
     });
+
+    useEffect(() => {
+        setData("id", id);
+    }, [id]);
+
     const [copiaA, setCopiaA] = useState<any>([]);
     const { data, setData, errors, post, progress, reset, setDefaults } =
         useForm({

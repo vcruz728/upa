@@ -51,25 +51,25 @@ export const sunEditorLangEs = {
         tag_pre: "Código",
         template: "",
         lineHeight: "Altura de línea",
-        paragraphStyle: "",
-        textStyle: "",
-        imageGallery: "",
-        dir_ltr: "",
-        dir_rtl: "",
-        mention: "",
+        paragraphStyle: "Estilo de párrafo",
+        textStyle: "Estilo de texto",
+        imageGallery: "Galería de imágenes",
+        dir_ltr: "Izquierda a derecha",
+        dir_rtl: "Derecha a izquierda",
+        mention: "Mención",
     },
 
     dialogBox: {
         linkBox: {
-            title: "",
-            url: "",
-            text: "",
-            newWindowCheck: "",
-            downloadLinkCheck: "",
-            bookmark: "",
+            title: "ítulo",
+            url: "URL",
+            text: "Texto",
+            newWindowCheck: "Abrir en una nueva ventana",
+            downloadLinkCheck: "Descargar enlace",
+            bookmark: "Marcador",
         },
         mathBox: {
-            title: "",
+            title: "Titulo",
             inputLabel: "",
             fontSizeLabel: "",
             previewLabel: "",
@@ -109,32 +109,32 @@ export const sunEditorLangEs = {
         ratio: "",
     },
     controller: {
-        edit: "",
-        unlink: "",
-        remove: "",
-        insertRowAbove: "",
-        insertRowBelow: "",
-        deleteRow: "",
-        insertColumnBefore: "",
-        insertColumnAfter: "",
-        deleteColumn: "",
-        fixedColumnWidth: "",
-        resize100: "",
-        resize75: "",
-        resize50: "",
-        resize25: "",
-        autoSize: "",
-        mirrorHorizontal: "",
-        mirrorVertical: "",
-        rotateLeft: "",
-        rotateRight: "",
-        maxSize: "",
-        minSize: "",
-        tableHeader: "",
-        mergeCells: "",
-        splitCells: "",
-        HorizontalSplit: "",
-        VerticalSplit: "",
+        edit: "Editar",
+        unlink: "Desvincular",
+        remove: "Eliminar",
+        insertRowAbove: "Insertar fila arriba",
+        insertRowBelow: "Insertar fila abajo",
+        deleteRow: "Eliminar fila",
+        insertColumnBefore: "Insertar columna antes",
+        insertColumnAfter: "Insertar columna después",
+        deleteColumn: "Eliminar columna",
+        fixedColumnWidth: "Ancho de columna fijo",
+        resize100: "100%",
+        resize75: "75%",
+        resize50: "50%",
+        resize25: "25%",
+        autoSize: "Ajuste automático",
+        mirrorHorizontal: "Espejo horizontal",
+        mirrorVertical: "Espejo vertical",
+        rotateLeft: "Rotar a la izquierda",
+        rotateRight: "Rotar a la derecha",
+        maxSize: "Tamaño máximo",
+        minSize: "Tamaño mínimo",
+        tableHeader: "Encabezado de tabla",
+        mergeCells: "Combinar celdas",
+        splitCells: "Dividir celdas",
+        HorizontalSplit: "Dividir horizontalmente",
+        VerticalSplit: "Dividir verticalmente",
     },
 
     menu: {
@@ -147,16 +147,31 @@ export const sunEditorLangEs = {
     },
 };
 
-//export const appUrl = "https://procesosacademicos.buap.mx/upa/public";
-export const appUrl = "http://localhost/upa/public";
+// (opcional) si usas <meta name="app-url" content="{{ url('/') }}">
+const metaAppUrl =
+    typeof document !== "undefined"
+        ? (document.querySelector('meta[name="app-url"]') as HTMLMetaElement)
+              ?.content
+        : "";
+
+export const APP_URL = (
+    metaAppUrl ||
+    import.meta.env.VITE_APP_URL ||
+    ""
+).replace(/\/+$/, ""); // sin slash final
+
 export const getFullUrl = (path: string): string => {
-    if (path.startsWith("http")) {
-        return path; // Ya es una URL completa
+    if (!path) return APP_URL;
+    if (/^https?:\/\//i.test(path)) return path;
+
+    // Asegura leading slash
+    let p = path.startsWith("/") ? path : `/${path}`;
+
+    // Evita duplicar "/public" o "/upa/public" si el APP_URL ya termina en /public
+    if (APP_URL.endsWith("/public")) {
+        // quita "/public" o "/<algo>/public" al inicio del path (ej. "/upa/public/...")
+        p = p.replace(/^\/(?:[^/]+\/)?public(?=\/)/i, "");
     }
 
-    // Asegurar que el path comience con /
-    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-
-    // Si appUrl ya termina con /public, usar directamente
-    return `${appUrl}${normalizedPath}`;
+    return `${APP_URL}${p}`;
 };

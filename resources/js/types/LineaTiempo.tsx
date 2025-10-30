@@ -96,8 +96,6 @@ const LineaTiempo = ({
                                         {Parser().parse(x.descripcion)}
                                     </div>
                                     <div className="timeline-footer d-flex align-items-center flex-wrap">
-                                        <i className="fe fe-heart  text-muted me-1"></i>
-                                        <span>19</span>
                                         <span className="ms-auto">
                                             <i className="fe fe-calendar text-muted mx-1"></i>
                                             {x.fecha}

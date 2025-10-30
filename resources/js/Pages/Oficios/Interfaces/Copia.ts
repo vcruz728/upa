@@ -15,4 +15,5 @@ export interface Respuesta {
     cargo: string;
     dependencia: string;
     respuesta: string;
+    comentario: string;
 }

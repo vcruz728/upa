@@ -1,0 +1,44 @@
+.rv-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0 0.5rem;
+}
+.rv-toolbar__group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Opcional: tooltips más compactos */
+.rpv-core__tooltip-body {
+    font-size: 12px;
+}
+
+/* Asegura tamaño correcto cuando ese wrapper está en fullscreen */
+.rpv-core__viewer--fullscreen.pdf-fs-wrap,
+.rpv-core__viewer--fullscreen.pdf-fs-wrap .rpv-core__inner {
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+/* En estado normal, llena el contenedor del Offcanvas */
+.pdf-fs-wrap,
+.pdf-fs-wrap .rpv-core__inner {
+    height: 100%;
+}
+
+/* Por si el transform del Offcanvas interfiere durante fullscreen */
+.offcanvas .rpv-core__viewer--fullscreen {
+    transform: none !important;
+}
+
+.pdf-fs-wrap .rpv-core__inner-pages {
+    min-height: 200px;
+}
+.pdf-fs-wrap .rpv-core__page-layer canvas {
+    min-width: 1px;
+    min-height: 1px;
+}

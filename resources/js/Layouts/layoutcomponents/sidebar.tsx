@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from "react";
-import { MENUITEMS } from "../../commondata/Sidemenu";
+import { MENUITEMS } from "../../commondata/Sidemenu.tsx_ori";
 import { Imagesdata } from "../../commondata/commonimages";
 import { Link, usePage } from "@inertiajs/react";
 import { getFullUrl } from "../../types/url";

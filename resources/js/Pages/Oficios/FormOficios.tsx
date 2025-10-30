@@ -18,6 +18,14 @@ import VerPdf from "@/types/VerPdf";
 import { Head } from "@inertiajs/react";
 import Swal from "sweetalert2";
 import TituloCard from "@/types/TituloCard";
+import { FilePond, registerPlugin } from "react-filepond";
+import FilePondPluginImagePreview from "filepond-plugin-image-preview";
+import FilePondPluginFilePoster from "filepond-plugin-file-poster";
+import "filepond/dist/filepond.min.css";
+import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
+import "filepond-plugin-file-poster/dist/filepond-plugin-file-poster.css";
+import toast from "react-hot-toast";
+registerPlugin(FilePondPluginFilePoster, FilePondPluginImagePreview);
 
 type FormIn = {
     id: number | null;
@@ -35,14 +43,14 @@ export default function FormOficio({
     status,
     des,
     areas,
-    oficio,
-    procesos,
+    oficioInicial,
+    files,
 }: {
     status?: string;
     des: any;
     areas: any;
-    oficio: any;
-    procesos: any;
+    oficioInicial: any;
+    files: [];
 }) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const selectDep = useRef<SelectInstance>(null);
@@ -50,6 +58,65 @@ export default function FormOficio({
     const selectPro = useRef<SelectInstance>(null);
     const [procesosSelect, setProcesosSelect] = useState([]);
     const [show, setShow] = useState<boolean>(false);
+    const [oficio, setOficio] = useState<any>(oficioInicial || {});
+    const [filesState, setFilesState] = useState<any[]>(
+        (files || []).map((file: any) => ({
+            ...file,
+            file: file.file || file.options?.metadata?.url,
+            source: String(file.source),
+            options: {
+                ...file.options,
+                type: "local",
+            },
+            origin: 1,
+        }))
+    );
+    const [variables, setVariables] = useState({
+        destinatarioDos: false,
+        urlPdf: "",
+        extension: "",
+    });
+    const [showDos, setShowDos] = useState(false);
+
+    useEffect(() => {
+        setOficio(oficioInicial || {});
+        setData({
+            id: oficioInicial?.id,
+            ingreso: oficioInicial?.ingreso,
+            num_oficio: oficioInicial?.num_oficio || "",
+            num_folio: oficioInicial?.num_folio || "",
+            dep_ua: oficioInicial?.dep_ua,
+            area: oficioInicial?.id_area,
+            proceso_impacta: "",
+            archivo: null,
+            descripcion: oficioInicial?.descripcion || "",
+        });
+
+        if (oficioInicial?.id !== undefined) {
+            selectDep.current!.selectOption({
+                value: oficioInicial.dep_ua,
+                label: oficioInicial.des,
+            });
+
+            selectAr.current!.selectOption({
+                value: oficioInicial.id_area,
+                label: oficioInicial.area,
+            });
+
+            selectPro.current!.selectOption({
+                value: oficioInicial.proceso_impacta,
+                label: oficioInicial.proceso,
+            });
+        }
+        if (oficioInicial?.id > 0) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: document.body.scrollHeight,
+                    behavior: "smooth",
+                });
+            }, 400);
+        }
+    }, [oficioInicial]);
 
     const {
         data,
@@ -164,6 +231,15 @@ export default function FormOficio({
             });
         }
     }, []);
+
+    function getCookie(name: string): string {
+        let value = "; " + document.cookie;
+        let parts = value.split("; " + name + "=");
+        if (parts.length === 2)
+            // @ts-ignore
+            return decodeURIComponent(parts.pop().split(";").shift());
+        return "";
+    }
 
     return (
         <AppLayout>
@@ -491,6 +567,37 @@ export default function FormOficio({
                                             />
                                         </Col>
 
+                                        <Col
+                                            xs={12}
+                                            sm={6}
+                                            md={6}
+                                            lg={6}
+                                            xl={4}
+                                            className="mb-3"
+                                        >
+                                            <Form.Label>
+                                                Adjuntar archivo PDF{" "}
+                                                <p className="obligatorio">*</p>
+                                            </Form.Label>
+                                            <Form.Control
+                                                type="file"
+                                                accept=".pdf"
+                                                className={
+                                                    errors.archivo
+                                                        ? "inputError"
+                                                        : ""
+                                                }
+                                                ref={fileInputRef}
+                                                onChange={(e) =>
+                                                    handleChangeS(e)
+                                                }
+                                            />
+
+                                            <InputError
+                                                className="mt-1"
+                                                message={errors.archivo}
+                                            />
+                                        </Col>
                                         {oficio?.archivo !== undefined ? (
                                             <Col
                                                 xs={12}
@@ -511,41 +618,7 @@ export default function FormOficio({
                                                     ></i>
                                                 </span>
                                             </Col>
-                                        ) : (
-                                            <Col
-                                                xs={12}
-                                                sm={6}
-                                                md={6}
-                                                lg={6}
-                                                xl={4}
-                                                className="mb-3"
-                                            >
-                                                <Form.Label>
-                                                    Adjuntar archivo PDF{" "}
-                                                    <p className="obligatorio">
-                                                        *
-                                                    </p>
-                                                </Form.Label>
-                                                <Form.Control
-                                                    type="file"
-                                                    accept=".pdf"
-                                                    className={
-                                                        errors.archivo
-                                                            ? "inputError"
-                                                            : ""
-                                                    }
-                                                    ref={fileInputRef}
-                                                    onChange={(e) =>
-                                                        handleChangeS(e)
-                                                    }
-                                                />
-
-                                                <InputError
-                                                    className="mt-1"
-                                                    message={errors.archivo}
-                                                />
-                                            </Col>
-                                        )}
+                                        ) : null}
                                     </div>
                                     <div className="form-row">
                                         <Form.Label>
@@ -576,12 +649,298 @@ export default function FormOficio({
                                             message={errors.descripcion}
                                         />
                                     </div>
-                                    <Col xs={12}>
+
+                                    <Col
+                                        xs={12}
+                                        className="d-flex justify-content-end mt-5"
+                                    >
                                         <Button type="submit" className="mt-4">
-                                            Guardar nuevo oficio
+                                            {oficio?.id > 0
+                                                ? "Actualizar oficio"
+                                                : "Guardar nuevo oficio"}
                                         </Button>
                                     </Col>
                                     <Col xs={12} className="mt-2"></Col>
+                                    {oficio?.id > 0 ? (
+                                        <Row>
+                                            <Col xs={12} className="mt-5 mb-4">
+                                                <Card.Header className="d-flex justify-content-between">
+                                                    <Card.Title as="h3">
+                                                        <TituloCard
+                                                            titulo="Archivos adjuntos"
+                                                            obligatorio={false}
+                                                        />
+                                                    </Card.Title>
+                                                </Card.Header>
+                                            </Col>
+                                            <Col>
+                                                <FilePond
+                                                    files={filesState}
+                                                    onupdatefiles={
+                                                        setFilesState
+                                                    }
+                                                    allowMultiple={true}
+                                                    acceptedFileTypes={[
+                                                        "application/pdf",
+                                                        "image/jpeg",
+                                                        "application/xml",
+                                                        "text/xml",
+                                                        "image/png",
+                                                        "application/msword",
+                                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                                    ]}
+                                                    onactivatefile={(
+                                                        fileItem
+                                                    ) => {
+                                                        const url =
+                                                            fileItem.getMetadata(
+                                                                "url"
+                                                            );
+                                                        const extension =
+                                                            fileItem.getMetadata(
+                                                                "extension"
+                                                            );
+                                                        if (url) {
+                                                            if (
+                                                                extension ==
+                                                                    "pdf" ||
+                                                                extension ==
+                                                                    "jpg" ||
+                                                                extension ==
+                                                                    "jpeg" ||
+                                                                extension ==
+                                                                    "png"
+                                                            ) {
+                                                                setVariables({
+                                                                    ...variables,
+                                                                    urlPdf: url,
+                                                                    extension:
+                                                                        extension,
+                                                                });
+                                                                setShowDos(
+                                                                    true
+                                                                );
+                                                            } else {
+                                                                window.open(
+                                                                    url,
+                                                                    "_blank"
+                                                                );
+                                                            }
+                                                        }
+                                                    }}
+                                                    filePosterMaxHeight={150}
+                                                    server={{
+                                                        process: {
+                                                            url: route(
+                                                                "oficios.uploadFilesRecepcion",
+                                                                {
+                                                                    id: oficio.id,
+                                                                }
+                                                            ),
+                                                            method: "POST",
+                                                            withCredentials:
+                                                                true,
+                                                            headers: {
+                                                                "X-XSRF-TOKEN":
+                                                                    getCookie(
+                                                                        "XSRF-TOKEN"
+                                                                    ),
+                                                                Accept: "application/json",
+                                                            },
+                                                            onload: (
+                                                                response
+                                                            ) => {
+                                                                return JSON.parse(
+                                                                    response
+                                                                ).id;
+                                                            },
+                                                            onerror: (
+                                                                response
+                                                            ) => {
+                                                                let msg =
+                                                                    "Error al subir archivo";
+                                                                try {
+                                                                    const res =
+                                                                        JSON.parse(
+                                                                            response
+                                                                        );
+                                                                    if (
+                                                                        res.errors &&
+                                                                        res
+                                                                            .errors
+                                                                            .file &&
+                                                                        res
+                                                                            .errors
+                                                                            .file
+                                                                            .length >
+                                                                            0
+                                                                    ) {
+                                                                        msg =
+                                                                            res
+                                                                                .errors
+                                                                                .file[0];
+                                                                    } else if (
+                                                                        res.message
+                                                                    ) {
+                                                                        msg =
+                                                                            res.message;
+                                                                    }
+                                                                } catch {}
+                                                                toast.error(
+                                                                    msg
+                                                                );
+                                                                return msg;
+                                                            },
+                                                        },
+                                                        revert: {
+                                                            url: route(
+                                                                "oficios.deleteFileRecepcion"
+                                                            ),
+                                                            method: "DELETE",
+                                                            withCredentials:
+                                                                true,
+                                                            headers: {
+                                                                "X-XSRF-TOKEN":
+                                                                    getCookie(
+                                                                        "XSRF-TOKEN"
+                                                                    ),
+                                                            },
+                                                            onload: () => {
+                                                                toast.success(
+                                                                    "Archivo eliminado"
+                                                                );
+                                                                return "";
+                                                            },
+                                                            onerror: (
+                                                                response
+                                                            ) => {
+                                                                let msg =
+                                                                    "Error al eliminar archivo";
+                                                                try {
+                                                                    const res =
+                                                                        JSON.parse(
+                                                                            response
+                                                                        );
+                                                                    msg =
+                                                                        res.error ||
+                                                                        msg;
+                                                                } catch {}
+                                                                toast.error(
+                                                                    msg
+                                                                );
+                                                                return response;
+                                                            },
+                                                        },
+                                                        remove: (
+                                                            source,
+                                                            load,
+                                                            error
+                                                        ) => {
+                                                            fetch(
+                                                                route(
+                                                                    "oficios.deleteFileRecepcion"
+                                                                ),
+                                                                {
+                                                                    method: "DELETE",
+                                                                    credentials:
+                                                                        "include",
+                                                                    headers: {
+                                                                        "X-XSRF-TOKEN":
+                                                                            getCookie(
+                                                                                "XSRF-TOKEN"
+                                                                            ),
+                                                                    },
+                                                                    body: source,
+                                                                }
+                                                            )
+                                                                .then(
+                                                                    (
+                                                                        response
+                                                                    ) => {
+                                                                        if (
+                                                                            response.ok
+                                                                        ) {
+                                                                            toast.success(
+                                                                                "Archivo eliminado"
+                                                                            );
+                                                                            load();
+                                                                        } else {
+                                                                            return response
+                                                                                .json()
+                                                                                .then(
+                                                                                    (
+                                                                                        data
+                                                                                    ) => {
+                                                                                        const msg =
+                                                                                            data.error ||
+                                                                                            "Error al eliminar archivo";
+                                                                                        toast.error(
+                                                                                            msg
+                                                                                        );
+                                                                                        error(
+                                                                                            msg
+                                                                                        );
+                                                                                    }
+                                                                                );
+                                                                        }
+                                                                    }
+                                                                )
+                                                                .catch(
+                                                                    (err) => {
+                                                                        toast.error(
+                                                                            "Error al eliminar archivo"
+                                                                        );
+                                                                        error(
+                                                                            "Error al eliminar archivo"
+                                                                        );
+                                                                    }
+                                                                );
+                                                        },
+                                                        load: (
+                                                            source,
+                                                            load,
+                                                            error,
+                                                            progress,
+                                                            abort,
+                                                            headers
+                                                        ) => {
+                                                            load(new Blob());
+                                                        },
+                                                    }}
+                                                    name="file"
+                                                    labelIdle='Arrastre y suelte sus archivos o <span class="filepond--label-action">Seleccionelos aquí</span>'
+                                                    onaddfile={(
+                                                        error,
+                                                        fileItem
+                                                    ) => {
+                                                        if (
+                                                            fileItem.origin ===
+                                                                1 &&
+                                                            fileItem.getMetadata(
+                                                                "url"
+                                                            )
+                                                        ) {
+                                                            setTimeout(() => {
+                                                                const filePondItem =
+                                                                    document.querySelector(
+                                                                        `[data-filepond-item-id="${fileItem.id}"] .filepond--file-info-main`
+                                                                    );
+                                                                if (
+                                                                    filePondItem
+                                                                ) {
+                                                                    const url =
+                                                                        fileItem.getMetadata(
+                                                                            "url"
+                                                                        );
+                                                                    filePondItem.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${fileItem.filename}</a>`;
+                                                                }
+                                                            }, 100);
+                                                        }
+                                                    }}
+                                                />
+                                            </Col>
+                                        </Row>
+                                    ) : null}
                                 </form>
                             </Card.Body>
                         </Card>
@@ -592,6 +951,13 @@ export default function FormOficio({
                     show={show}
                     setShow={setShow}
                     tipo="pdf"
+                />
+
+                <VerPdf
+                    urlPdf={variables.urlPdf}
+                    show={showDos}
+                    tipo={variables.extension}
+                    setShow={setShowDos}
                 />
             </Fragment>
         </AppLayout>

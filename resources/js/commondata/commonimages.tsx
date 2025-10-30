@@ -1,15 +1,15 @@
-import buapAzul from "../assets/images/logos/buap_azul.png";
-import buapBlanco from "../assets/images/logos/buap_blanco.png";
-import buapBlancoDos from "../assets/images/logos/buap_blanco_2.png";
-import minervaAzul from "../assets/images/logos/minerva_azul.png";
-import minervaGris from "../assets/images/logos/minerva_gris.png";
-import minervaBlanco from "../assets/images/logos/minerva_blanco.png";
-import minervaBuapAcostadoAzul from "../assets/images/logos/minerva_buap_costado_azul.png";
-import minervaBuapAcostadoBlanco from "../assets/images/logos/minerva_buap_costado_blanco.png";
-import minervaBuapBlanco from "../assets/images/logos/minerva_buap_blanco.png";
-import minervaBuapAzul from "../assets/images/logos/minver_buap_azul.png";
-import bAzul from "../assets/images/logos/b_azul.png";
-import bBlanco from "../assets/images/logos/b_blanco.png";
+import buapAzul from "../assets/images/logos/buap_azul.webp";
+import buapBlanco from "../assets/images/logos/buap_blanco.webp";
+import buapBlancoDos from "../assets/images/logos/buap_blanco_2.webp";
+import minervaAzul from "../assets/images/logos/minerva_azul.webp";
+import minervaGris from "../assets/images/logos/minerva_gris.webp";
+import minervaBlanco from "../assets/images/logos/minerva_blanco.webp";
+import minervaBuapAcostadoAzul from "../assets/images/logos/minerva_buap_costado_azul.webp";
+import minervaBuapAcostadoBlanco from "../assets/images/logos/minerva_buap_costado_blanco.webp";
+import minervaBuapBlanco from "../assets/images/logos/minerva_buap_blanco.webp";
+import minervaBuapAzul from "../assets/images/logos/minver_buap_azul.webp";
+import bAzul from "../assets/images/logos/b_azul.webp";
+import bBlanco from "../assets/images/logos/b_blanco.webp";
 import user from "../assets/images/user.png";
 
 export const Imagesdata = (data: any) => {

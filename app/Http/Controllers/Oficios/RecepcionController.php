@@ -40,6 +40,7 @@ class RecepcionController extends Controller
 			'descripcion',
 			'oficios.archivo',
 			'oficios.archivo_respuesta',
+			'oficios.oficio_final',
 			DB::raw("RIGHT(oficios.archivo_respuesta, 3) as extension"),
 
     	)

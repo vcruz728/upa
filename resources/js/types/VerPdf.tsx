@@ -26,8 +26,6 @@ const VerPdf = ({
         } else {
             setTema("light");
         }
-
-        console.log(tipo, urlPdf, pdfjsLib.version);
     });
 
     return (

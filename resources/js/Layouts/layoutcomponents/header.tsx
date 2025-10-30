@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Nav, Dropdown, Navbar } from "react-bootstrap";
 import { Link, usePage } from "@inertiajs/react";
 import { Imagesdata } from "../../commondata/commonimages";
-import { getFullUrl } from "../../types/url";
 
 const SideMenuIcon: any = () => {
     //leftsidemenu
@@ -158,9 +157,7 @@ const Header = () => {
                                                 <div className="dropdown-divider m-0"></div>
                                                 <Link
                                                     className="dropdown-item"
-                                                    href={getFullUrl(
-                                                        "/mi-perfil"
-                                                    )}
+                                                    href={route("profile.edit")}
                                                 >
                                                     <i className="dropdown-icon fe fe-user"></i>{" "}
                                                     Mi perfil
@@ -168,7 +165,7 @@ const Header = () => {
 
                                                 <Link
                                                     className="dropdown-item"
-                                                    href={getFullUrl("/logout")}
+                                                    href={route("logout")}
                                                     method="post"
                                                 >
                                                     <i className="dropdown-icon fe fe-alert-circle"></i>{" "}

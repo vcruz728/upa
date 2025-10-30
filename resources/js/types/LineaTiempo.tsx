@@ -1,6 +1,5 @@
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { Offcanvas } from "react-bootstrap";
-import { getFullUrl } from "./url";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Parser } from "html-to-react";
@@ -33,12 +32,9 @@ const LineaTiempo = ({
     }, [id]);
 
     const getDatos = async () => {
-        const response = await fetch(
-            getFullUrl(`/oficios/get/linea-tiempo/${id}`),
-            {
-                method: "get",
-            }
-        );
+        const response = await fetch(route("oficios.getLineaTiempo", { id }), {
+            method: "get",
+        });
 
         const datos = await response.json();
 

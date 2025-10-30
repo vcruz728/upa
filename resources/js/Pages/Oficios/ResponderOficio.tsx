@@ -12,7 +12,7 @@ import Copias from "./Copias";
 import { Copia, Respuesta } from "./Interfaces/Copia";
 import toast from "react-hot-toast";
 import InputError from "../InputError";
-import { getFullUrl, sunEditorLangEs } from "../../types/url";
+import { sunEditorLangEs } from "../../types/url";
 import Swal from "sweetalert2";
 import VerPdf from "@/types/VerPdf";
 import { FilePond, registerPlugin } from "react-filepond";
@@ -146,9 +146,10 @@ export default function Recepcion({
         }
         setData("dirigido_aDos", value);
         const response = await fetch(
-            getFullUrl(
-                `/peticiones/get/detalle-directorio/${value}/${data.destinatarioDos}`
-            ),
+            route("getDetalleDirectorio", {
+                id: value,
+                tipo: data.destinatarioDos,
+            }),
             {
                 method: "get",
             }
@@ -186,7 +187,7 @@ export default function Recepcion({
             },
         }).then((result) => {
             if (result.isConfirmed) {
-                router.put(getFullUrl(`/oficios/area/responde/${oficio.id}`));
+                router.put(route("respondeOFicio", { id: oficio.id }));
             }
         });
     };
@@ -567,8 +568,6 @@ export default function Recepcion({
                                                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                                                 ]}
                                                 onactivatefile={(fileItem) => {
-                                                    // Aquí va tu función personalizada
-                                                    // Por ejemplo, abrir el archivo en una nueva pestaña:
                                                     const url =
                                                         fileItem.getMetadata(
                                                             "url"
@@ -577,7 +576,6 @@ export default function Recepcion({
                                                         fileItem.getMetadata(
                                                             "extension"
                                                         );
-                                                    console.log(extension);
                                                     if (url) {
                                                         if (
                                                             extension ==
@@ -606,8 +604,11 @@ export default function Recepcion({
                                                 filePosterMaxHeight={150}
                                                 server={{
                                                     process: {
-                                                        url: getFullUrl(
-                                                            `/oficios/subir/archivos/${oficio.id}`
+                                                        url: route(
+                                                            "uploadFilesOficio",
+                                                            {
+                                                                id: oficio.id,
+                                                            }
                                                         ),
                                                         method: "POST",
                                                         withCredentials: true,
@@ -616,13 +617,9 @@ export default function Recepcion({
                                                                 getCookie(
                                                                     "XSRF-TOKEN"
                                                                 ),
-                                                            Accept: "application/json", // <-- fuerza JSON
+                                                            Accept: "application/json",
                                                         },
                                                         onload: (response) => {
-                                                            console.log(
-                                                                response
-                                                            );
-                                                            // FilePond espera que el backend regrese un id (filename)
                                                             return JSON.parse(
                                                                 response
                                                             ).id;
@@ -631,12 +628,10 @@ export default function Recepcion({
                                                             let msg =
                                                                 "Error al subir archivo";
                                                             try {
-                                                                // Si la respuesta es JSON de Laravel
                                                                 const res =
                                                                     JSON.parse(
                                                                         response
                                                                     );
-                                                                // Laravel regresa { errors: { file: [ "El archivo debe ser un archivo de tipo: pdf." ] } }
                                                                 if (
                                                                     res.errors &&
                                                                     res.errors
@@ -658,12 +653,12 @@ export default function Recepcion({
                                                                 }
                                                             } catch {}
                                                             toast.error(msg);
-                                                            return msg; // FilePond mostrará este mensaje
+                                                            return msg;
                                                         },
                                                     },
                                                     revert: {
-                                                        url: getFullUrl(
-                                                            "/oficios/elimina/archivo"
+                                                        url: route(
+                                                            "deleteFileOficio"
                                                         ),
                                                         method: "DELETE",
                                                         withCredentials: true,
@@ -700,11 +695,9 @@ export default function Recepcion({
                                                         load,
                                                         error
                                                     ) => {
-                                                        console.log(source);
-                                                        // Función para eliminar archivos que ya estaban en el servidor
                                                         fetch(
-                                                            getFullUrl(
-                                                                "/oficios/elimina/archivo"
+                                                            route(
+                                                                "deleteFileOficio"
                                                             ),
                                                             {
                                                                 method: "DELETE",
@@ -716,15 +709,11 @@ export default function Recepcion({
                                                                             "XSRF-TOKEN"
                                                                         ),
                                                                 },
-                                                                body: source, // El ID del archivo como texto plano (raw body)
+                                                                body: source,
                                                             }
                                                         )
                                                             .then(
                                                                 (response) => {
-                                                                    console.log(
-                                                                        "Respuesta del servidor:",
-                                                                        response
-                                                                    );
                                                                     if (
                                                                         response.ok
                                                                     ) {
@@ -754,10 +743,6 @@ export default function Recepcion({
                                                                 }
                                                             )
                                                             .catch((err) => {
-                                                                console.error(
-                                                                    "Error en petición de eliminación:",
-                                                                    err
-                                                                );
                                                                 toast.error(
                                                                     "Error al eliminar archivo"
                                                                 );
@@ -783,7 +768,6 @@ export default function Recepcion({
                                                     error,
                                                     fileItem
                                                 ) => {
-                                                    console.log(fileItem);
                                                     if (
                                                         fileItem.origin === 1 &&
                                                         fileItem.getMetadata(

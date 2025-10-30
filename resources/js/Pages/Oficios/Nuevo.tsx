@@ -1,7 +1,7 @@
 import AppLayout from "../../Layouts/app";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { FormEventHandler, Fragment, useEffect, useRef, useState } from "react";
-import { Card, Row, Col, Form } from "react-bootstrap";
+import { Card, Row, Col, Form, Tabs, Tab, Button } from "react-bootstrap";
 import PageHeader from "../../Layouts/layoutcomponents/pageHeader";
 import TituloCard from "@/types/TituloCard";
 import { SelectInstance } from "react-select";
@@ -22,6 +22,12 @@ import "filepond/dist/filepond.min.css";
 import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css";
 import "filepond-plugin-file-poster/dist/filepond-plugin-file-poster.css";
 registerPlugin(FilePondPluginFilePoster, FilePondPluginImagePreview);
+
+type FormIn = {
+    id: number;
+    descripcion: string;
+    archivo: File | null;
+};
 
 export default function Nuevo({
     status,
@@ -64,6 +70,7 @@ export default function Nuevo({
     );
     const [destinatarios, setDestinatarios] = useState<any[]>([]);
     const [showDos, setShowDos] = useState(false);
+    const htmlInicial = `<div>Por este medio le envío un cordial saludo, asimismo solicito de su apoyo</div>`;
 
     useEffect(() => {
         if (
@@ -85,6 +92,7 @@ export default function Nuevo({
 
     useEffect(() => {
         setData("id_oficio", oficio?.id || 0);
+        formGrupal.setData("id", oficio?.id || 0);
     }, [oficio]);
 
     useEffect(() => {
@@ -93,7 +101,10 @@ export default function Nuevo({
 
     useEffect(() => {
         if (error) {
-            toast("Error: " + error, {
+            const errorMessage = error.includes("|")
+                ? error.split("|")[0]
+                : error;
+            toast("Error: " + errorMessage, {
                 style: {
                     padding: "25px",
                     color: "#fff",
@@ -103,8 +114,6 @@ export default function Nuevo({
             });
         }
     }, [error]);
-
-    const htmlWithTableImages = `<div>Por este medio le envío un cordial saludo, asimismo solicito de su apoyo</div>`;
 
     const {
         data,
@@ -122,7 +131,7 @@ export default function Nuevo({
         cargoDos: oficio?.cargo,
         dependenciaDos: oficio?.dependencia,
         dirigido_aDos: oficio?.id_directorio,
-        asunto: oficio?.respuesta || htmlWithTableImages,
+        asunto: oficio?.respuesta || htmlInicial,
     });
 
     const submit: FormEventHandler = (e) => {
@@ -148,9 +157,10 @@ export default function Nuevo({
         }
         setData("dirigido_aDos", value);
         const response = await fetch(
-            getFullUrl(
-                `/peticiones/get/detalle-directorio/${value}/${data.destinatarioDos}`
-            ),
+            route("getDetalleDirectorio", {
+                id: value,
+                tipo: data.destinatarioDos,
+            }),
             {
                 method: "get",
             }
@@ -189,7 +199,9 @@ export default function Nuevo({
         }).then((result) => {
             if (result.isConfirmed) {
                 router.put(
-                    getFullUrl(`/oficios/nuevo/area/responde/${data.id_oficio}`)
+                    route("enviaOficioNuevo", {
+                        id: data.id_oficio,
+                    })
                 );
             }
         });
@@ -223,6 +235,44 @@ export default function Nuevo({
         return "";
     }
 
+    const nuevoGrupal = () => {
+        Swal.fire({
+            title: "¿Está seguro?",
+            text: "Se le asignara un folio de oficio el cual tendra que usar para el oficio grupal",
+            icon: "warning",
+            showDenyButton: true,
+            showCancelButton: false,
+            confirmButtonText: "Sí, estoy seguro",
+            denyButtonText: `Cancelar`,
+            customClass: {
+                container: "swalSuperior",
+            },
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.post(route(`nuevo.oficio.grupal`));
+            }
+        });
+    };
+
+    const formGrupal = useForm<FormIn>({
+        id: oficio?.id,
+        archivo: null,
+        descripcion: oficio?.descripcion || "",
+    });
+
+    const submitGrupal: FormEventHandler = (e) => {
+        e.preventDefault();
+        console.log(formGrupal.data);
+        formGrupal.post(route("saveNuevoOficioGrupal"), {});
+    };
+
+    const handleChangeS = (e: any) => {
+        const target = e.target as HTMLInputElement;
+        if (target.files) {
+            formGrupal.setData("archivo", target.files[0]);
+        }
+    };
+
     return (
         <AppLayout>
             <Head>
@@ -249,604 +299,1052 @@ export default function Nuevo({
                             <Card.Header className="d-flex justify-content-between">
                                 <Card.Title as="h3">
                                     <TituloCard
-                                        titulo="Formulario de ingreso"
+                                        titulo="Formulario"
                                         obligatorio={true}
                                     />
                                 </Card.Title>
-                                <button
-                                    className="btn btn-success mb-3"
-                                    onClick={() => setShow(true)}
-                                    style={{ margin: "0 !important" }}
-                                >
-                                    Ver pdf
-                                </button>
                             </Card.Header>
                             <Card.Body>
-                                <Row>
-                                    {oficio?.descripcion_rechazo_jefe !==
-                                        undefined &&
-                                    oficio?.descripcion_rechazo_jefe !==
-                                        null ? (
-                                        <Col xs={12} className="mb-5">
-                                            <Form.Label>
-                                                Breve descripción del rechazo
-                                                por parte de su jefe de área:
-                                            </Form.Label>
-                                            <textarea
-                                                className="form-control"
-                                                value={
-                                                    oficio?.descripcion_rechazo_jefe
-                                                }
-                                                rows={3}
-                                                disabled
-                                            ></textarea>
-                                        </Col>
-                                    ) : null}
-
-                                    {oficio?.descripcion_rechazo_final !==
-                                        undefined &&
-                                    oficio?.descripcion_rechazo_final !==
-                                        null ? (
-                                        <Col xs={12} className="mb-5">
-                                            <Form.Label>
-                                                Breve descripción del rechazo
-                                                por parte de recepción
-                                                documental:
-                                            </Form.Label>
-                                            <textarea
-                                                className="form-control"
-                                                value={
-                                                    oficio?.descripcion_rechazo_final
-                                                }
-                                                rows={3}
-                                                disabled
-                                            ></textarea>
-                                        </Col>
-                                    ) : null}
-
-                                    <Col md={6} xl={4} className="mb-4">
-                                        <Form.Group>
-                                            <label>
-                                                Destinatario{" "}
-                                                <p className="obligatorio">*</p>
-                                            </label>
-                                            <div className="custom-controls-stacked">
-                                                <label className="custom-control custom-radio-md">
-                                                    <input
-                                                        type="radio"
-                                                        className="custom-control-input"
-                                                        name="destinatarioDos"
-                                                        defaultValue="Interno"
-                                                        onChange={() => {
-                                                            changeExterno(
-                                                                "Interno"
-                                                            );
-                                                        }}
-                                                        checked={
-                                                            data.destinatarioDos ==
-                                                            "Interno"
-                                                                ? true
-                                                                : false
-                                                        }
-                                                    />
-                                                    <span className="custom-control-label">
-                                                        Interno (BUAP)
-                                                    </span>
-                                                </label>
-                                                <label
-                                                    className="custom-control custom-radio-md"
-                                                    style={{
-                                                        marginLeft: "2rem",
-                                                    }}
-                                                >
-                                                    <input
-                                                        type="radio"
-                                                        className="custom-control-input"
-                                                        name="destinatarioDos"
-                                                        defaultValue="Externo"
-                                                        onChange={() => {
-                                                            changeExterno(
-                                                                "Externo"
-                                                            );
-                                                        }}
-                                                        checked={
-                                                            data.destinatarioDos ==
-                                                            "Externo"
-                                                                ? true
-                                                                : false
-                                                        }
-                                                    />
-                                                    <span className="custom-control-label">
-                                                        Externo
-                                                    </span>
-                                                </label>
-                                            </div>
-                                            <InputError
-                                                className="mt-1"
-                                                message={errors.destinatarioDos}
-                                            />
-                                        </Form.Group>
-                                    </Col>
-
-                                    <Row>
-                                        <Col xs={12} sm={6} xl={4}>
-                                            <div className="form-group">
-                                                <label htmlFor="directorio">
-                                                    Dirigido a:
-                                                    <p className="obligatorio">
-                                                        *
-                                                    </p>
-                                                </label>
-                                                <Select
-                                                    classNamePrefix="Select"
-                                                    ref={selectDirec}
-                                                    options={destinatarios}
-                                                    name="dirigido_aDos"
-                                                    placeholder="Seleccione una opción"
-                                                    onChange={(e: any) =>
-                                                        getDirec(e?.value)
-                                                    }
-                                                />
-                                                <InputError
-                                                    className="mt-1"
-                                                    message={
-                                                        errors.dirigido_aDos
-                                                    }
-                                                />
-                                            </div>
-                                        </Col>
-                                    </Row>
-
-                                    <Row>
-                                        <Col xs={12} sm={6} xl={4}>
-                                            <div className="form-group">
-                                                <label htmlFor="">
-                                                    Nombre
-                                                    <p className="obligatorio">
-                                                        *
-                                                    </p>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    name="nombreDos"
-                                                    className="form-control"
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            "nombreDos",
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    value={data.nombreDos}
-                                                    readOnly={true}
-                                                />
-                                            </div>
-                                            <InputError
-                                                className="mt-1"
-                                                message={errors.nombreDos}
-                                            />
-                                        </Col>
-
-                                        <Col xs={12} sm={6} xl={4}>
-                                            <div className="form-group">
-                                                <label htmlFor="">Cargo</label>
-                                                <input
-                                                    type="text"
-                                                    name="cargoDos"
-                                                    className="form-control"
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            "cargoDos",
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    value={data.cargoDos}
-                                                    readOnly={true}
-                                                />
-                                            </div>
-                                            <InputError
-                                                className="mt-1"
-                                                message={errors.cargoDos}
-                                            />
-                                        </Col>
-
-                                        <Col xs={12} sm={6} xl={4}>
-                                            <div className="form-group">
-                                                <label htmlFor="">
-                                                    Dependencia
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    name="dependenciaDos"
-                                                    className="form-control"
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            "dependenciaDos",
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    value={data.dependenciaDos}
-                                                    readOnly={true}
-                                                />
-                                            </div>
-                                            <InputError
-                                                className="mt-1"
-                                                message={errors.dependenciaDos}
-                                            />
-                                        </Col>
-                                    </Row>
-
-                                    <Row className="mt-5">
-                                        <Col xs={12}>
-                                            <h4>
-                                                Ingrese aquí el cuerpo de la
-                                                respuesta del oficio
-                                            </h4>
-                                        </Col>
-                                        <Col xs={12}>
-                                            <SunEditor
-                                                setContents={data.asunto}
-                                                onChange={(value) => {
-                                                    setData("asunto", value);
-                                                }}
-                                                setDefaultStyle="font-family: 'SourceSansPro'; font-size: 12px;"
-                                                setOptions={{
-                                                    lang: sunEditorLangEs,
-                                                    buttonList: [
-                                                        ["undo", "redo"],
-                                                        ["font", "fontSize"],
-                                                        ["blockquote"],
-                                                        [
-                                                            "bold",
-                                                            "underline",
-                                                            "italic",
-                                                            "strike",
-                                                            "subscript",
-                                                            "superscript",
-                                                        ],
-                                                        [
-                                                            "fontColor",
-                                                            "hiliteColor",
-                                                        ],
-                                                        [
-                                                            "align",
-                                                            "list",
-                                                            "lineHeight",
-                                                        ],
-                                                        ["outdent", "indent"],
-                                                        [
-                                                            "table",
-                                                            "horizontalRule",
-                                                        ],
-                                                    ],
-                                                    font: ["SourceSansPro"],
-                                                    fontSize: [12],
-                                                    defaultTag: "div",
-                                                    minHeight: "300px",
-                                                    showPathLabel: false,
-                                                    attributesWhitelist: {
-                                                        all: "style",
-                                                        table: "cellpadding|width|cellspacing|height|style",
-                                                        tr: "valign|style",
-                                                        td: "styleinsert|height|style",
-                                                        img: "title|alt|src|style",
-                                                    },
-                                                }}
-                                            />
-                                            <InputError
-                                                className="mt-1"
-                                                message={errors.asunto}
-                                            />
-                                        </Col>
-
-                                        <Col
-                                            xs={12}
-                                            className="d-flex justify-content-end mt-5"
+                                <div className="panel panel-default">
+                                    <Tabs
+                                        defaultActiveKey={
+                                            oficio?.masivo == 1
+                                                ? "tab2"
+                                                : "tab1"
+                                        }
+                                    >
+                                        <Tab
+                                            eventKey="tab1"
+                                            title="Individual"
+                                            hidden={
+                                                oficio?.masivo == 1
+                                                    ? true
+                                                    : false
+                                            }
                                         >
-                                            <button
-                                                className="btn btn-primary"
-                                                onClick={submit}
-                                            >
-                                                Guardar Respuesta
-                                            </button>
-                                        </Col>
-                                    </Row>
-
-                                    <Row>
-                                        <Col xs={12} className="mt-5 mb-4">
-                                            <Card.Header className="d-flex justify-content-between">
-                                                <Card.Title as="h3">
-                                                    <TituloCard
-                                                        titulo="Archivos adjuntos"
-                                                        obligatorio={false}
-                                                    />
-                                                </Card.Title>
-                                            </Card.Header>
-                                        </Col>
-                                        <Col>
-                                            <FilePond
-                                                files={filesState}
-                                                onupdatefiles={setFilesState}
-                                                allowMultiple={true}
-                                                acceptedFileTypes={[
-                                                    "application/pdf",
-                                                    "image/jpeg",
-                                                    "image/png",
-                                                    "application/msword",
-                                                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                                                ]}
-                                                onactivatefile={(fileItem) => {
-                                                    // Aquí va tu función personalizada
-                                                    // Por ejemplo, abrir el archivo en una nueva pestaña:
-                                                    const url =
-                                                        fileItem.getMetadata(
-                                                            "url"
-                                                        );
-                                                    const extension =
-                                                        fileItem.getMetadata(
-                                                            "extension"
-                                                        );
-                                                    console.log(extension);
-                                                    if (url) {
-                                                        if (
-                                                            extension ==
-                                                                "pdf" ||
-                                                            extension ==
-                                                                "jpg" ||
-                                                            extension ==
-                                                                "jpeg" ||
-                                                            extension == "png"
-                                                        ) {
-                                                            setVariables({
-                                                                ...variables,
-                                                                urlPdf: url,
-                                                                extension:
-                                                                    extension,
-                                                            });
-                                                            setShowDos(true);
-                                                        } else {
-                                                            window.open(
-                                                                url,
-                                                                "_blank"
-                                                            );
+                                            <Row>
+                                                <Col
+                                                    xs={12}
+                                                    className="d-flex justify-content-end mb-3"
+                                                >
+                                                    <button
+                                                        className="btn btn-success mb-3"
+                                                        onClick={() =>
+                                                            setShow(true)
                                                         }
-                                                    }
-                                                }}
-                                                filePosterMaxHeight={150}
-                                                server={{
-                                                    process: {
-                                                        url: getFullUrl(
-                                                            `/oficios/nuevo/subir/archivos/${data.id_oficio}`
-                                                        ),
-                                                        method: "POST",
-                                                        withCredentials: true,
-                                                        headers: {
-                                                            "X-XSRF-TOKEN":
-                                                                getCookie(
-                                                                    "XSRF-TOKEN"
-                                                                ),
-                                                            Accept: "application/json", // <-- fuerza JSON
-                                                        },
-                                                        onload: (response) => {
-                                                            console.log(
-                                                                response
-                                                            );
-                                                            // FilePond espera que el backend regrese un id (filename)
-                                                            return JSON.parse(
-                                                                response
-                                                            ).id;
-                                                        },
-                                                        onerror: (response) => {
-                                                            let msg =
-                                                                "Error al subir archivo";
-                                                            try {
-                                                                // Si la respuesta es JSON de Laravel
-                                                                const res =
-                                                                    JSON.parse(
-                                                                        response
-                                                                    );
-                                                                // Laravel regresa { errors: { file: [ "El archivo debe ser un archivo de tipo: pdf." ] } }
-                                                                if (
-                                                                    res.errors &&
-                                                                    res.errors
-                                                                        .file &&
-                                                                    res.errors
-                                                                        .file
-                                                                        .length >
-                                                                        0
-                                                                ) {
-                                                                    msg =
-                                                                        res
-                                                                            .errors
-                                                                            .file[0];
-                                                                } else if (
-                                                                    res.message
-                                                                ) {
-                                                                    msg =
-                                                                        res.message;
-                                                                }
-                                                            } catch {}
-                                                            toast.error(msg);
-                                                            return msg; // FilePond mostrará este mensaje
-                                                        },
-                                                    },
-                                                    revert: {
-                                                        url: getFullUrl(
-                                                            "/oficios/nuevo/elimina/archivo"
-                                                        ),
-                                                        method: "DELETE",
-                                                        withCredentials: true,
-                                                        headers: {
-                                                            "X-XSRF-TOKEN":
-                                                                getCookie(
-                                                                    "XSRF-TOKEN"
-                                                                ),
-                                                        },
-                                                        onload: () => {
-                                                            toast.success(
-                                                                "Archivo eliminado"
-                                                            );
-                                                            return "";
-                                                        },
-                                                        onerror: (response) => {
-                                                            let msg =
-                                                                "Error al eliminar archivo";
-                                                            try {
-                                                                const res =
-                                                                    JSON.parse(
-                                                                        response
-                                                                    );
-                                                                msg =
-                                                                    res.error ||
-                                                                    msg;
-                                                            } catch {}
-                                                            toast.error(msg);
-                                                            return response;
-                                                        },
-                                                    },
-                                                    remove: (
-                                                        source,
-                                                        load,
-                                                        error
-                                                    ) => {
-                                                        console.log(source);
-                                                        // Función para eliminar archivos que ya estaban en el servidor
-                                                        fetch(
-                                                            getFullUrl(
-                                                                "/oficios/nuevo/elimina/archivo"
-                                                            ),
-                                                            {
-                                                                method: "DELETE",
-                                                                credentials:
-                                                                    "include",
-                                                                headers: {
-                                                                    "X-XSRF-TOKEN":
-                                                                        getCookie(
-                                                                            "XSRF-TOKEN"
-                                                                        ),
-                                                                },
-                                                                body: source, // El ID del archivo como texto plano (raw body)
+                                                        style={{
+                                                            margin: "0 !important",
+                                                        }}
+                                                    >
+                                                        Ver pdf
+                                                    </button>
+                                                </Col>
+                                                {oficio?.descripcion_rechazo_jefe !==
+                                                    undefined &&
+                                                oficio?.descripcion_rechazo_jefe !==
+                                                    null ? (
+                                                    <Col
+                                                        xs={12}
+                                                        className="mb-5"
+                                                    >
+                                                        <Form.Label>
+                                                            Breve descripción
+                                                            del rechazo por
+                                                            parte de su jefe de
+                                                            área:
+                                                        </Form.Label>
+                                                        <textarea
+                                                            className="form-control"
+                                                            value={
+                                                                oficio?.descripcion_rechazo_jefe
                                                             }
-                                                        )
-                                                            .then(
-                                                                (response) => {
-                                                                    if (
-                                                                        response.ok
-                                                                    ) {
-                                                                        toast.success(
-                                                                            "Archivo eliminado"
+                                                            rows={3}
+                                                            disabled
+                                                        ></textarea>
+                                                    </Col>
+                                                ) : null}
+
+                                                {oficio?.descripcion_rechazo_final !==
+                                                    undefined &&
+                                                oficio?.descripcion_rechazo_final !==
+                                                    null ? (
+                                                    <Col
+                                                        xs={12}
+                                                        className="mb-5"
+                                                    >
+                                                        <Form.Label>
+                                                            Breve descripción
+                                                            del rechazo por
+                                                            parte de recepción
+                                                            documental:
+                                                        </Form.Label>
+                                                        <textarea
+                                                            className="form-control"
+                                                            value={
+                                                                oficio?.descripcion_rechazo_final
+                                                            }
+                                                            rows={3}
+                                                            disabled
+                                                        ></textarea>
+                                                    </Col>
+                                                ) : null}
+
+                                                <Col
+                                                    md={6}
+                                                    xl={4}
+                                                    className="mb-4"
+                                                >
+                                                    <Form.Group>
+                                                        <label>
+                                                            Destinatario{" "}
+                                                            <p className="obligatorio">
+                                                                *
+                                                            </p>
+                                                        </label>
+                                                        <div className="custom-controls-stacked">
+                                                            <label className="custom-control custom-radio-md">
+                                                                <input
+                                                                    type="radio"
+                                                                    className="custom-control-input"
+                                                                    name="destinatarioDos"
+                                                                    defaultValue="Interno"
+                                                                    onChange={() => {
+                                                                        changeExterno(
+                                                                            "Interno"
                                                                         );
-                                                                        load();
-                                                                    } else {
-                                                                        return response
-                                                                            .json()
-                                                                            .then(
-                                                                                (
-                                                                                    data
+                                                                    }}
+                                                                    checked={
+                                                                        data.destinatarioDos ==
+                                                                        "Interno"
+                                                                            ? true
+                                                                            : false
+                                                                    }
+                                                                />
+                                                                <span className="custom-control-label">
+                                                                    Interno
+                                                                    (BUAP)
+                                                                </span>
+                                                            </label>
+                                                            <label
+                                                                className="custom-control custom-radio-md"
+                                                                style={{
+                                                                    marginLeft:
+                                                                        "2rem",
+                                                                }}
+                                                            >
+                                                                <input
+                                                                    type="radio"
+                                                                    className="custom-control-input"
+                                                                    name="destinatarioDos"
+                                                                    defaultValue="Externo"
+                                                                    onChange={() => {
+                                                                        changeExterno(
+                                                                            "Externo"
+                                                                        );
+                                                                    }}
+                                                                    checked={
+                                                                        data.destinatarioDos ==
+                                                                        "Externo"
+                                                                            ? true
+                                                                            : false
+                                                                    }
+                                                                />
+                                                                <span className="custom-control-label">
+                                                                    Externo
+                                                                </span>
+                                                            </label>
+                                                        </div>
+                                                        <InputError
+                                                            className="mt-1"
+                                                            message={
+                                                                errors.destinatarioDos
+                                                            }
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+
+                                                <Row>
+                                                    <Col xs={12} sm={6} xl={4}>
+                                                        <div className="form-group">
+                                                            <label htmlFor="directorio">
+                                                                Dirigido a:
+                                                                <p className="obligatorio">
+                                                                    *
+                                                                </p>
+                                                            </label>
+                                                            <Select
+                                                                classNamePrefix="Select"
+                                                                ref={
+                                                                    selectDirec
+                                                                }
+                                                                options={
+                                                                    destinatarios
+                                                                }
+                                                                name="dirigido_aDos"
+                                                                placeholder="Seleccione una opción"
+                                                                onChange={(
+                                                                    e: any
+                                                                ) =>
+                                                                    getDirec(
+                                                                        e?.value
+                                                                    )
+                                                                }
+                                                            />
+                                                            <InputError
+                                                                className="mt-1"
+                                                                message={
+                                                                    errors.dirigido_aDos
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </Col>
+                                                </Row>
+
+                                                <Row>
+                                                    <Col xs={12} sm={6} xl={4}>
+                                                        <div className="form-group">
+                                                            <label htmlFor="">
+                                                                Nombre
+                                                                <p className="obligatorio">
+                                                                    *
+                                                                </p>
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                name="nombreDos"
+                                                                className="form-control"
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        "nombreDos",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                value={
+                                                                    data.nombreDos
+                                                                }
+                                                                readOnly={true}
+                                                            />
+                                                        </div>
+                                                        <InputError
+                                                            className="mt-1"
+                                                            message={
+                                                                errors.nombreDos
+                                                            }
+                                                        />
+                                                    </Col>
+
+                                                    <Col xs={12} sm={6} xl={4}>
+                                                        <div className="form-group">
+                                                            <label htmlFor="">
+                                                                Cargo
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                name="cargoDos"
+                                                                className="form-control"
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        "cargoDos",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                value={
+                                                                    data.cargoDos
+                                                                }
+                                                                readOnly={true}
+                                                            />
+                                                        </div>
+                                                        <InputError
+                                                            className="mt-1"
+                                                            message={
+                                                                errors.cargoDos
+                                                            }
+                                                        />
+                                                    </Col>
+
+                                                    <Col xs={12} sm={6} xl={4}>
+                                                        <div className="form-group">
+                                                            <label htmlFor="">
+                                                                Dependencia
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                name="dependenciaDos"
+                                                                className="form-control"
+                                                                onChange={(e) =>
+                                                                    setData(
+                                                                        "dependenciaDos",
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                value={
+                                                                    data.dependenciaDos
+                                                                }
+                                                                readOnly={true}
+                                                            />
+                                                        </div>
+                                                        <InputError
+                                                            className="mt-1"
+                                                            message={
+                                                                errors.dependenciaDos
+                                                            }
+                                                        />
+                                                    </Col>
+                                                </Row>
+
+                                                <Row className="mt-5">
+                                                    <Col xs={12}>
+                                                        <h4>
+                                                            Ingrese aquí el
+                                                            cuerpo de la
+                                                            respuesta del oficio
+                                                        </h4>
+                                                    </Col>
+                                                    <Col xs={12}>
+                                                        <SunEditor
+                                                            setContents={
+                                                                data.asunto
+                                                            }
+                                                            onChange={(
+                                                                value
+                                                            ) => {
+                                                                setData(
+                                                                    "asunto",
+                                                                    value
+                                                                );
+                                                            }}
+                                                            setDefaultStyle="font-family: 'SourceSansPro'; font-size: 12px;"
+                                                            setOptions={{
+                                                                lang: sunEditorLangEs,
+                                                                buttonList: [
+                                                                    [
+                                                                        "undo",
+                                                                        "redo",
+                                                                    ],
+                                                                    [
+                                                                        "font",
+                                                                        "fontSize",
+                                                                    ],
+                                                                    [
+                                                                        "blockquote",
+                                                                    ],
+                                                                    [
+                                                                        "bold",
+                                                                        "underline",
+                                                                        "italic",
+                                                                        "strike",
+                                                                        "subscript",
+                                                                        "superscript",
+                                                                    ],
+                                                                    [
+                                                                        "fontColor",
+                                                                        "hiliteColor",
+                                                                    ],
+                                                                    [
+                                                                        "align",
+                                                                        "list",
+                                                                        "lineHeight",
+                                                                    ],
+                                                                    [
+                                                                        "outdent",
+                                                                        "indent",
+                                                                    ],
+                                                                    [
+                                                                        "table",
+                                                                        "horizontalRule",
+                                                                    ],
+                                                                ],
+                                                                font: [
+                                                                    "SourceSansPro",
+                                                                ],
+                                                                fontSize: [12],
+                                                                defaultTag:
+                                                                    "div",
+                                                                minHeight:
+                                                                    "300px",
+                                                                showPathLabel:
+                                                                    false,
+                                                                attributesWhitelist:
+                                                                    {
+                                                                        all: "style",
+                                                                        table: "cellpadding|width|cellspacing|height|style",
+                                                                        tr: "valign|style",
+                                                                        td: "styleinsert|height|style",
+                                                                        img: "title|alt|src|style",
+                                                                    },
+                                                            }}
+                                                        />
+                                                        <InputError
+                                                            className="mt-1"
+                                                            message={
+                                                                errors.asunto
+                                                            }
+                                                        />
+                                                    </Col>
+
+                                                    <Col
+                                                        xs={12}
+                                                        className="d-flex justify-content-end mt-5"
+                                                    >
+                                                        <button
+                                                            className="btn btn-primary"
+                                                            onClick={submit}
+                                                        >
+                                                            Guardar oficio
+                                                        </button>
+                                                    </Col>
+                                                </Row>
+
+                                                {oficio?.id !== undefined ? (
+                                                    <>
+                                                        <Row>
+                                                            <Col
+                                                                xs={12}
+                                                                className="mt-5 mb-4"
+                                                            >
+                                                                <Card.Header className="d-flex justify-content-between">
+                                                                    <Card.Title as="h3">
+                                                                        <TituloCard
+                                                                            titulo="Archivos adjuntos"
+                                                                            obligatorio={
+                                                                                false
+                                                                            }
+                                                                        />
+                                                                    </Card.Title>
+                                                                </Card.Header>
+                                                            </Col>
+                                                            <Col>
+                                                                <FilePond
+                                                                    files={
+                                                                        filesState
+                                                                    }
+                                                                    onupdatefiles={
+                                                                        setFilesState
+                                                                    }
+                                                                    allowMultiple={
+                                                                        true
+                                                                    }
+                                                                    acceptedFileTypes={[
+                                                                        "application/pdf",
+                                                                        "image/jpeg",
+                                                                        "image/png",
+                                                                        "application/msword",
+                                                                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                                                    ]}
+                                                                    onactivatefile={(
+                                                                        fileItem
+                                                                    ) => {
+                                                                        const url =
+                                                                            fileItem.getMetadata(
+                                                                                "url"
+                                                                            );
+                                                                        const extension =
+                                                                            fileItem.getMetadata(
+                                                                                "extension"
+                                                                            );
+                                                                        if (
+                                                                            url
+                                                                        ) {
+                                                                            if (
+                                                                                extension ==
+                                                                                    "pdf" ||
+                                                                                extension ==
+                                                                                    "jpg" ||
+                                                                                extension ==
+                                                                                    "jpeg" ||
+                                                                                extension ==
+                                                                                    "png"
+                                                                            ) {
+                                                                                setVariables(
+                                                                                    {
+                                                                                        ...variables,
+                                                                                        urlPdf: url,
+                                                                                        extension:
+                                                                                            extension,
+                                                                                    }
+                                                                                );
+                                                                                setShowDos(
+                                                                                    true
+                                                                                );
+                                                                            } else {
+                                                                                window.open(
+                                                                                    url,
+                                                                                    "_blank"
+                                                                                );
+                                                                            }
+                                                                        }
+                                                                    }}
+                                                                    filePosterMaxHeight={
+                                                                        150
+                                                                    }
+                                                                    server={{
+                                                                        process:
+                                                                            {
+                                                                                url: route(
+                                                                                    "oficios.uploadFilesNew",
+                                                                                    {
+                                                                                        id: data.id_oficio,
+                                                                                    }
+                                                                                ),
+                                                                                method: "POST",
+                                                                                withCredentials:
+                                                                                    true,
+                                                                                headers:
+                                                                                    {
+                                                                                        "X-XSRF-TOKEN":
+                                                                                            getCookie(
+                                                                                                "XSRF-TOKEN"
+                                                                                            ),
+                                                                                        Accept: "application/json",
+                                                                                    },
+                                                                                onload: (
+                                                                                    response
                                                                                 ) => {
-                                                                                    const msg =
-                                                                                        data.error ||
+                                                                                    return JSON.parse(
+                                                                                        response
+                                                                                    )
+                                                                                        .id;
+                                                                                },
+                                                                                onerror:
+                                                                                    (
+                                                                                        response
+                                                                                    ) => {
+                                                                                        let msg =
+                                                                                            "Error al subir archivo";
+                                                                                        try {
+                                                                                            const res =
+                                                                                                JSON.parse(
+                                                                                                    response
+                                                                                                );
+
+                                                                                            if (
+                                                                                                res.errors &&
+                                                                                                res
+                                                                                                    .errors
+                                                                                                    .file &&
+                                                                                                res
+                                                                                                    .errors
+                                                                                                    .file
+                                                                                                    .length >
+                                                                                                    0
+                                                                                            ) {
+                                                                                                msg =
+                                                                                                    res
+                                                                                                        .errors
+                                                                                                        .file[0];
+                                                                                            } else if (
+                                                                                                res.message
+                                                                                            ) {
+                                                                                                msg =
+                                                                                                    res.message;
+                                                                                            }
+                                                                                        } catch {}
+                                                                                        toast.error(
+                                                                                            msg
+                                                                                        );
+                                                                                        return msg;
+                                                                                    },
+                                                                            },
+                                                                        revert: {
+                                                                            url: route(
+                                                                                "oficio.deleteFile"
+                                                                            ),
+                                                                            method: "DELETE",
+                                                                            withCredentials:
+                                                                                true,
+                                                                            headers:
+                                                                                {
+                                                                                    "X-XSRF-TOKEN":
+                                                                                        getCookie(
+                                                                                            "XSRF-TOKEN"
+                                                                                        ),
+                                                                                },
+                                                                            onload: () => {
+                                                                                toast.success(
+                                                                                    "Archivo eliminado"
+                                                                                );
+                                                                                return "";
+                                                                            },
+                                                                            onerror:
+                                                                                (
+                                                                                    response
+                                                                                ) => {
+                                                                                    let msg =
                                                                                         "Error al eliminar archivo";
+                                                                                    try {
+                                                                                        const res =
+                                                                                            JSON.parse(
+                                                                                                response
+                                                                                            );
+                                                                                        msg =
+                                                                                            res.error ||
+                                                                                            msg;
+                                                                                    } catch {}
                                                                                     toast.error(
                                                                                         msg
                                                                                     );
-                                                                                    error(
-                                                                                        msg
-                                                                                    );
+                                                                                    return response;
+                                                                                },
+                                                                        },
+                                                                        remove: (
+                                                                            source,
+                                                                            load,
+                                                                            error
+                                                                        ) => {
+                                                                            fetch(
+                                                                                route(
+                                                                                    "oficio.deleteFile"
+                                                                                ),
+                                                                                {
+                                                                                    method: "DELETE",
+                                                                                    credentials:
+                                                                                        "include",
+                                                                                    headers:
+                                                                                        {
+                                                                                            "X-XSRF-TOKEN":
+                                                                                                getCookie(
+                                                                                                    "XSRF-TOKEN"
+                                                                                                ),
+                                                                                        },
+                                                                                    body: source,
                                                                                 }
+                                                                            )
+                                                                                .then(
+                                                                                    (
+                                                                                        response
+                                                                                    ) => {
+                                                                                        if (
+                                                                                            response.ok
+                                                                                        ) {
+                                                                                            toast.success(
+                                                                                                "Archivo eliminado"
+                                                                                            );
+                                                                                            load();
+                                                                                        } else {
+                                                                                            return response
+                                                                                                .json()
+                                                                                                .then(
+                                                                                                    (
+                                                                                                        data
+                                                                                                    ) => {
+                                                                                                        const msg =
+                                                                                                            data.error ||
+                                                                                                            "Error al eliminar archivo";
+                                                                                                        toast.error(
+                                                                                                            msg
+                                                                                                        );
+                                                                                                        error(
+                                                                                                            msg
+                                                                                                        );
+                                                                                                    }
+                                                                                                );
+                                                                                        }
+                                                                                    }
+                                                                                )
+                                                                                .catch(
+                                                                                    (
+                                                                                        err
+                                                                                    ) => {
+                                                                                        toast.error(
+                                                                                            "Error al eliminar archivo"
+                                                                                        );
+                                                                                        error(
+                                                                                            "Error al eliminar archivo"
+                                                                                        );
+                                                                                    }
+                                                                                );
+                                                                        },
+                                                                        load: (
+                                                                            source,
+                                                                            load,
+                                                                            error,
+                                                                            progress,
+                                                                            abort,
+                                                                            headers
+                                                                        ) => {
+                                                                            load(
+                                                                                new Blob()
                                                                             );
-                                                                    }
-                                                                }
-                                                            )
-                                                            .catch((err) => {
-                                                                console.error(
-                                                                    "Error en petición de eliminación:",
-                                                                    err
-                                                                );
-                                                                toast.error(
-                                                                    "Error al eliminar archivo"
-                                                                );
-                                                                error(
-                                                                    "Error al eliminar archivo"
-                                                                );
-                                                            });
-                                                    },
-                                                    load: (
-                                                        source,
-                                                        load,
-                                                        error,
-                                                        progress,
-                                                        abort,
-                                                        headers
-                                                    ) => {
-                                                        // No necesitas cargar el archivo, solo llama load() para que FilePond lo trate como gestionado por el servidor
-                                                        load(new Blob());
-                                                    },
-                                                }}
-                                                name="file"
-                                                labelIdle='Arrastre y suelte sus archivos o <span class="filepond--label-action">Seleccionelos aquí</span>'
-                                                onaddfile={(
-                                                    error,
-                                                    fileItem
-                                                ) => {
-                                                    console.log(fileItem);
-                                                    if (
-                                                        fileItem.origin === 1 &&
-                                                        fileItem.getMetadata(
-                                                            "url"
-                                                        )
-                                                    ) {
-                                                        setTimeout(() => {
-                                                            const filePondItem =
-                                                                document.querySelector(
-                                                                    `[data-filepond-item-id="${fileItem.id}"] .filepond--file-info-main`
-                                                                );
-                                                            if (filePondItem) {
-                                                                const url =
-                                                                    fileItem.getMetadata(
-                                                                        "url"
-                                                                    );
-                                                                filePondItem.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${fileItem.filename}</a>`;
+                                                                        },
+                                                                    }}
+                                                                    name="file"
+                                                                    labelIdle='Arrastre y suelte sus archivos o <span class="filepond--label-action">Seleccionelos aquí</span>'
+                                                                    onaddfile={(
+                                                                        error,
+                                                                        fileItem
+                                                                    ) => {
+                                                                        if (
+                                                                            fileItem.origin ===
+                                                                                1 &&
+                                                                            fileItem.getMetadata(
+                                                                                "url"
+                                                                            )
+                                                                        ) {
+                                                                            setTimeout(
+                                                                                () => {
+                                                                                    const filePondItem =
+                                                                                        document.querySelector(
+                                                                                            `[data-filepond-item-id="${fileItem.id}"] .filepond--file-info-main`
+                                                                                        );
+                                                                                    if (
+                                                                                        filePondItem
+                                                                                    ) {
+                                                                                        const url =
+                                                                                            fileItem.getMetadata(
+                                                                                                "url"
+                                                                                            );
+                                                                                        filePondItem.innerHTML = `<a href="${url}" target="_blank" rel="noopener noreferrer">${fileItem.filename}</a>`;
+                                                                                    }
+                                                                                },
+                                                                                100
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </Col>
+                                                        </Row>
+
+                                                        <Copias
+                                                            id={data.id_oficio}
+                                                            directorio={
+                                                                directorio
                                                             }
-                                                        }, 100);
-                                                    }
-                                                }}
-                                            />
-                                        </Col>
-                                    </Row>
+                                                            externos={externos}
+                                                            copias={copias}
+                                                            tipo={0}
+                                                        />
 
-                                    <Copias
-                                        id={data.id_oficio}
-                                        directorio={directorio}
-                                        externos={externos}
-                                        copias={copias}
-                                        tipo={0}
-                                    />
+                                                        <Row className="mt-5">
+                                                            <Col
+                                                                sm={12}
+                                                                md={3}
+                                                            ></Col>
+                                                            <Col
+                                                                sm={12}
+                                                                md={6}
+                                                                className="d-flex justify-content-center"
+                                                            >
+                                                                <button
+                                                                    className="btn btn-primary"
+                                                                    onClick={
+                                                                        enviaRespuesta
+                                                                    }
+                                                                    style={{
+                                                                        marginRight: 30,
+                                                                    }}
+                                                                >
+                                                                    Enviar
+                                                                    Respuesta
+                                                                </button>
 
-                                    <Row className="mt-5">
-                                        <Col sm={12} md={3}></Col>
-                                        <Col
-                                            sm={12}
-                                            md={6}
-                                            className="d-flex justify-content-center"
+                                                                <button
+                                                                    className="btn btn-success"
+                                                                    onClick={() =>
+                                                                        setShow(
+                                                                            true
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    Ver vista
+                                                                    previa
+                                                                </button>
+                                                            </Col>
+                                                            <Col
+                                                                sm={12}
+                                                                md={3}
+                                                            ></Col>
+                                                        </Row>
+                                                    </>
+                                                ) : null}
+                                            </Row>
+                                        </Tab>
+                                        <Tab
+                                            eventKey="tab2"
+                                            title="Grupal"
+                                            hidden={
+                                                oficio?.masivo != 1 &&
+                                                oficio?.masivo !== undefined
+                                                    ? true
+                                                    : false
+                                            }
                                         >
-                                            <button
-                                                className="btn btn-primary"
-                                                onClick={enviaRespuesta}
-                                                style={{ marginRight: 30 }}
-                                            >
-                                                Enviar Respuesta
-                                            </button>
+                                            <Row>
+                                                {oficio?.descripcion_rechazo_jefe !==
+                                                    undefined &&
+                                                oficio?.descripcion_rechazo_jefe !==
+                                                    null ? (
+                                                    <Col
+                                                        xs={12}
+                                                        className="mb-5"
+                                                    >
+                                                        <Form.Label>
+                                                            Breve descripción
+                                                            del rechazo por
+                                                            parte de su jefe de
+                                                            área:
+                                                        </Form.Label>
+                                                        <textarea
+                                                            className="form-control"
+                                                            value={
+                                                                oficio?.descripcion_rechazo_jefe
+                                                            }
+                                                            rows={3}
+                                                            disabled
+                                                        ></textarea>
+                                                    </Col>
+                                                ) : null}
 
-                                            <button
-                                                className="btn btn-success"
-                                                onClick={() => setShow(true)}
-                                            >
-                                                Ver vista previa
-                                            </button>
-                                        </Col>
-                                        <Col sm={12} md={3}></Col>
-                                    </Row>
-                                </Row>
+                                                {oficio?.descripcion_rechazo_final !==
+                                                    undefined &&
+                                                oficio?.descripcion_rechazo_final !==
+                                                    null ? (
+                                                    <Col
+                                                        xs={12}
+                                                        className="mb-5"
+                                                    >
+                                                        <Form.Label>
+                                                            Breve descripción
+                                                            del rechazo por
+                                                            parte de recepción
+                                                            documental:
+                                                        </Form.Label>
+                                                        <textarea
+                                                            className="form-control"
+                                                            value={
+                                                                oficio?.descripcion_rechazo_final
+                                                            }
+                                                            rows={3}
+                                                            disabled
+                                                        ></textarea>
+                                                    </Col>
+                                                ) : null}
+
+                                                {oficio?.id === undefined ? (
+                                                    <Col
+                                                        md={12}
+                                                        className="d-flex justify-content-center mb-4"
+                                                    >
+                                                        <Button
+                                                            className="btn btn-primary"
+                                                            onClick={
+                                                                nuevoGrupal
+                                                            }
+                                                        >
+                                                            Obtener Folio
+                                                        </Button>
+                                                    </Col>
+                                                ) : (
+                                                    <>
+                                                        <Col
+                                                            md={12}
+                                                            className="d-flex justify-content-center mb-4 mt-4"
+                                                        >
+                                                            <h3>
+                                                                Numero de folio:{" "}
+                                                                {
+                                                                    oficio.oficio_respuesta
+                                                                }
+                                                            </h3>
+                                                        </Col>
+                                                        <form
+                                                            onSubmit={
+                                                                submitGrupal
+                                                            }
+                                                        >
+                                                            <Col
+                                                                xs={12}
+                                                                className="mb-5"
+                                                            >
+                                                                <Form.Label>
+                                                                    Breve
+                                                                    descripción
+                                                                    del motivo
+                                                                    del oficio
+                                                                </Form.Label>
+                                                                <textarea
+                                                                    className={
+                                                                        formGrupal
+                                                                            .errors
+                                                                            .descripcion
+                                                                            ? "form-control inputError"
+                                                                            : "form-control"
+                                                                    }
+                                                                    defaultValue={
+                                                                        formGrupal
+                                                                            .data
+                                                                            .descripcion
+                                                                    }
+                                                                    onChange={(
+                                                                        e
+                                                                    ) =>
+                                                                        formGrupal.setData(
+                                                                            "descripcion",
+                                                                            e
+                                                                                .target
+                                                                                .value
+                                                                        )
+                                                                    }
+                                                                    rows={3}
+                                                                ></textarea>
+                                                                <InputError
+                                                                    className="mt-1"
+                                                                    message={
+                                                                        formGrupal
+                                                                            .errors
+                                                                            .descripcion
+                                                                    }
+                                                                />
+                                                            </Col>
+
+                                                            <Col
+                                                                xs={12}
+                                                                sm={6}
+                                                                md={6}
+                                                                lg={6}
+                                                                xl={4}
+                                                                className="mb-3"
+                                                            >
+                                                                <Form.Label>
+                                                                    Adjuntar
+                                                                    archivo PDF
+                                                                    o Word{" "}
+                                                                    <p className="obligatorio">
+                                                                        *
+                                                                    </p>
+                                                                </Form.Label>
+                                                                <Form.Control
+                                                                    type="file"
+                                                                    accept=".pdf,.doc,.docx"
+                                                                    className={
+                                                                        formGrupal
+                                                                            .errors
+                                                                            .archivo
+                                                                            ? "inputError"
+                                                                            : ""
+                                                                    }
+                                                                    onChange={(
+                                                                        e
+                                                                    ) =>
+                                                                        handleChangeS(
+                                                                            e
+                                                                        )
+                                                                    }
+                                                                />
+
+                                                                <InputError
+                                                                    className="mt-1"
+                                                                    message={
+                                                                        formGrupal
+                                                                            .errors
+                                                                            .archivo
+                                                                    }
+                                                                />
+                                                            </Col>
+
+                                                            {oficio?.id !==
+                                                                undefined &&
+                                                            oficio?.archivo !==
+                                                                null ? (
+                                                                <>
+                                                                    {oficio?.archivo.substring(
+                                                                        oficio
+                                                                            ?.archivo
+                                                                            .length -
+                                                                            3
+                                                                    ) !==
+                                                                    "pdf" ? (
+                                                                        <Col
+                                                                            xs={
+                                                                                12
+                                                                            }
+                                                                            style={{
+                                                                                padding: 40,
+                                                                            }}
+                                                                        >
+                                                                            <a
+                                                                                className="tag tag-radius tag-round tag-outline-danger"
+                                                                                target="_BLANK"
+                                                                                href={getFullUrl(
+                                                                                    `/files/${oficio.archivo}`
+                                                                                )}
+                                                                            >
+                                                                                Click
+                                                                                para
+                                                                                descargar
+                                                                                el
+                                                                                archivo
+                                                                                <i
+                                                                                    className="fa fa-file-pdf-o"
+                                                                                    style={{
+                                                                                        padding: 6,
+                                                                                    }}
+                                                                                ></i>
+                                                                            </a>
+                                                                        </Col>
+                                                                    ) : (
+                                                                        <Col
+                                                                            xs={
+                                                                                12
+                                                                            }
+                                                                            style={{
+                                                                                padding: 40,
+                                                                            }}
+                                                                        >
+                                                                            <span
+                                                                                className="tag tag-radius tag-round tag-outline-danger"
+                                                                                onClick={() => {
+                                                                                    setVariables(
+                                                                                        {
+                                                                                            ...variables,
+                                                                                            urlPdf: oficio?.archivo,
+                                                                                            extension:
+                                                                                                "pdf",
+                                                                                        }
+                                                                                    );
+                                                                                    setShowDos(
+                                                                                        true
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                Click
+                                                                                para
+                                                                                ver
+                                                                                archivo
+                                                                                <i
+                                                                                    className="fa fa-file-pdf-o"
+                                                                                    style={{
+                                                                                        padding: 6,
+                                                                                    }}
+                                                                                ></i>
+                                                                            </span>
+                                                                        </Col>
+                                                                    )}
+                                                                </>
+                                                            ) : null}
+
+                                                            <Col
+                                                                xs={12}
+                                                                className="mb-3 d-flex justify-content-end"
+                                                            >
+                                                                <Button
+                                                                    className="btn btn-primary mt-4"
+                                                                    type="submit"
+                                                                >
+                                                                    Guardar y
+                                                                    enviar a
+                                                                    revisión
+                                                                </Button>
+                                                            </Col>
+                                                        </form>
+                                                    </>
+                                                )}
+                                            </Row>
+                                        </Tab>
+                                    </Tabs>
+                                </div>
                             </Card.Body>
                         </Card>
                     </Col>

@@ -129,23 +129,22 @@
         <table style="margin: 0 auto;  width: auto;">
             <tr>
                 <td style="text-align: right; width: 90px;  vertical-align: top; padding-right: 0 !important; border: none !important; line-height: 0.8 !important;">
-                    Vicerrectoria<br>de Docencia
+                    Universidad<br>para Adultos
                 </td>
                 <td style=" vertical-align: middle; text-align: center; border: none !important;">
-                    <div style="display: inline-block; width: 1.5px; height: 45px; background: #adcbd3; margin: 0 auto;"></div>
+                    <div style="display: inline-block; width: 1.5px; height: 62px; background: #122348; margin: 0 auto; border-radius: 100"></div>
                 </td>
                 <td style="text-align: left;  vertical-align: top; padding-left: 7px !important; border: none !important; line-height: 0.8 !important;">
-                    4to. piso de la Torre de Gestión<br>
-                    Académica y servicios Administrativos,<br>
-                    Ciudad Universitaría, Puebla, Pue.<br>
-                    Tel. 222 229 55 00, Ext. 3553 y 5900
+                    11 sur 4701. Col. Reforma Agua Azul<br>
+                    C.P. 72430 Puebla, Pue.<br>
+                    Teléfono: 229 5500, Ext. 1653 y 1602
                 </td>
             </tr>
         </table>
     </div>
 </footer>
     <div class="content">
-       <div ><p style="">Oficio No. VD-{{ $oficio?->siglas }}/{{ $respuesta?->oficio_respuesta }}/{{ date('Y') }}</p></div>
+       <div ><p style="">Oficio No. {{ $oficio?->siglas }}/{{ $respuesta?->oficio_respuesta }}/{{ date('Y') }}</p></div>
         <br>
        <div >
             <p style="font-family: 'SourceSansPro'; font-weight: bold;">{{ $respuesta?->nombre }}</p>
@@ -154,6 +153,7 @@
             <p style="font-family: 'SourceSansPro'; font-weight: bold;">PRESENTE</p>
         </div>
     <br><br>
+
     <!--  contenifo -->
 
         {!! $respuesta?->respuesta ?? '' !!}
@@ -176,10 +176,12 @@
             <br>
             <br>
             
-            <p style="font-family: 'SourceSansPro';">Dr. José Jaime Vázquez López</p>
-            <p style="font-family: 'SourceSansPro';">Vicerrector de Docencia</p>
+            <p style="font-family: 'SourceSansPro';">Mtro. Ricardo Valderrama Valdez</p>
+            <p style="font-family: 'SourceSansPro';">Director</p>
+            <!-- Descomentart si ya quieren sello y firma
             <img src="{{ public_path('img/sello.png') }}" class="sello-movil" />
             <img src="{{ public_path('img/firma.png') }}" class="firma-movil" />
+            -->
         </div>
     
 
@@ -191,7 +193,7 @@
             </p>
         @endforeach
         <p style="font-family: 'SourceSansPro'; margin: 0px; font-size: 10px !important;">C.c.p. Archivo</p>
-        <p style="font-family: 'SourceSansPro'; margin: 0px; font-size: 10px !important;">Dr.JJVL/{{ $oficio?->area }}@if($oficio?->proceso)/{{ $oficio?->proceso }} @endif</p>
+        <p style="font-family: 'SourceSansPro'; margin: 0px; font-size: 10px !important;">Dr.RVV/{{ $oficio?->area }}@if($oficio?->proceso)/{{ $oficio?->proceso }} @endif</p>
     </div>
    
 </body>

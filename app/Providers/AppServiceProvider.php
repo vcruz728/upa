@@ -20,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
+        
         // Forzar el esquema HTTP para desarrollo local
         if (config('app.env') === 'local') {
             URL::forceScheme('http');

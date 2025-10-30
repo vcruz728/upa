@@ -33,10 +33,12 @@ export default function FormOficio({
     status,
     id,
     archivos,
+    oficio,
 }: {
     status?: string;
     id: number;
     archivos: any[];
+    oficio: any;
 }) {
     const [show, setShow] = useState<boolean>(false);
     const [show3, setShow3] = useState(false);
@@ -53,7 +55,7 @@ export default function FormOficio({
         e.preventDefault();
         Swal.fire({
             title: "¿Está seguro?",
-            text: "Se notificará al colaborador para que vuelva a responder el oficio.",
+            text: "Se notificará al colaborador para que vuelva a revisar el oficio.",
             icon: "warning",
             showDenyButton: true,
             showCancelButton: false,
@@ -82,7 +84,7 @@ export default function FormOficio({
             denyButtonText: `Cancelar`,
         }).then((result) => {
             if (result.isConfirmed) {
-                router.put(`/oficios/nuevo/autoriza/respuesta/${id}`);
+                router.put(route("aceptRespNuevo", { id }));
             }
         });
     };
@@ -127,24 +129,64 @@ export default function FormOficio({
                             </Card.Header>
                             <Card.Body>
                                 <div className="form-row">
-                                    <Col xs={12} style={{ padding: 40 }}>
-                                        <span
-                                            className="tag tag-radius tag-round tag-outline-danger"
-                                            onClick={() => {
-                                                setPdf(
-                                                    `imprime/nuevo/pdf/${id}`
-                                                ),
-                                                    setTipo("pdf");
-                                                setShow(true);
-                                            }}
-                                        >
-                                            Click para ver archivo
-                                            <i
-                                                className="fa fa-file-pdf-o"
-                                                style={{ padding: 6 }}
-                                            ></i>
-                                        </span>
-                                    </Col>
+                                    {oficio.masivo == 1 &&
+                                    oficio.archivo.substring(
+                                        oficio.archivo.length - 3
+                                    ) !== "pdf" ? (
+                                        <Col xs={12} style={{ padding: 40 }}>
+                                            <a
+                                                className="tag tag-radius tag-round tag-outline-danger"
+                                                target="_BLANK"
+                                                href={getFullUrl(
+                                                    `/files/${oficio.archivo}`
+                                                )}
+                                            >
+                                                Click para descargar el archivo
+                                                <i
+                                                    className="fa fa-file-pdf-o"
+                                                    style={{ padding: 6 }}
+                                                ></i>
+                                            </a>
+                                        </Col>
+                                    ) : (
+                                        <Col xs={12} style={{ padding: 40 }}>
+                                            <span
+                                                className="tag tag-radius tag-round tag-outline-danger"
+                                                onClick={() => {
+                                                    setPdf(
+                                                        oficio.masivo == 1
+                                                            ? oficio.archivo
+                                                            : `imprime/nuevo/pdf/${id}`
+                                                    ),
+                                                        setTipo("pdf");
+                                                    setShow(true);
+                                                }}
+                                            >
+                                                Click para ver archivo
+                                                <i
+                                                    className="fa fa-file-pdf-o"
+                                                    style={{ padding: 6 }}
+                                                ></i>
+                                            </span>
+                                        </Col>
+                                    )}
+
+                                    {oficio.masivo == 1 ? (
+                                        <Col xs={12} className="mb-5">
+                                            <Form.Label>
+                                                Breve descripción del motivo del
+                                                oficio
+                                            </Form.Label>
+                                            <textarea
+                                                className="form-control"
+                                                defaultValue={
+                                                    oficio.descripcion
+                                                }
+                                                disabled
+                                                rows={4}
+                                            ></textarea>
+                                        </Col>
+                                    ) : null}
 
                                     {archivos.length > 0 ? (
                                         <>
@@ -198,8 +240,11 @@ export default function FormOficio({
                                                 className="mb-5 d-flex justify-content-end"
                                             >
                                                 <a
-                                                    href={getFullUrl(
-                                                        `/oficios/nuevo/descargar-archivos-adjuntos/${id}`
+                                                    href={route(
+                                                        "oficios.downloadFiles",
+                                                        {
+                                                            id: id,
+                                                        }
                                                     )}
                                                     target="_BLANK"
                                                     className="btn btn-warning btn-lg mb-1"

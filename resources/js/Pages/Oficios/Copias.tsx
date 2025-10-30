@@ -10,7 +10,6 @@ import DataTable from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
-import { getFullUrl } from "../../types/url";
 import TituloCard from "@/types/TituloCard";
 
 DataTable.use(DT);
@@ -84,7 +83,7 @@ const Copias = ({
             },
         }).then((result) => {
             if (result.isConfirmed) {
-                router.delete(getFullUrl(`/oficios/copia/${id}`), {
+                router.delete(route("deleteCopiasOficio", { id }), {
                     preserveScroll: true,
                     onSuccess: (page) => {
                         toast("Correcto: Se elimino la copia del oficio.", {

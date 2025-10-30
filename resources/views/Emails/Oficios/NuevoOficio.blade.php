@@ -13,7 +13,7 @@
                     <!-- Header -->
                     <tr>
                         <td class="header" style="background-color: #122e48; padding: 40px; text-align: center; color: white; font-size: 24px;">
-                        Sistema Administrativo VD
+                        Sistema Administrativo UPA
                         </td>
                     </tr>
 
@@ -40,11 +40,16 @@
                             </table>
                         </td>
                     </tr>
-                   
+                    <!--
+                    <tr>
+                        <td class="body" style="padding: 40px; text-align: left; font-size: 16px; line-height: 1.6;">
+                            Se le recuerda que el tiempo máximo para responder al oficio es de 72 horas, las cuales corren a partir de que el oficio fue recibido por parte de recepción.
+                        </td>
+                    </tr> -->
                     <!-- Footer -->
                     <tr>
                         <td class="footer" style="background-color: #122e48; padding: 40px; text-align: center; color: white; font-size: 14px;">
-                        BUAP - Vicerrectoría de Docencia
+                        BUAP - UPA
                         </td>
                     </tr>
                 </table>

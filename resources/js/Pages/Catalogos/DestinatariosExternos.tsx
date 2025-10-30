@@ -24,7 +24,6 @@ import "datatables.net-responsive-bs5";
 import language from "datatables.net-plugins/i18n/es-MX.mjs";
 import InputError from "../InputError";
 import Swal from "sweetalert2";
-import { getFullUrl } from "../../types/url";
 import toast from "react-hot-toast";
 
 DataTable.use(DT);
@@ -101,27 +100,19 @@ export default function DestinatariosExternos({
             },
         }).then((result) => {
             if (result.isConfirmed) {
-                router.delete(
-                    getFullUrl(
-                        `/catalogos/destinatarios-externos/elimina/${id}`
-                    ),
-                    {
-                        preserveScroll: true,
-                        onSuccess: (page) => {
-                            toast(
-                                "Correcto: Se elimino el destinatario externo.",
-                                {
-                                    style: {
-                                        padding: "25px",
-                                        color: "#fff",
-                                        backgroundColor: "#29bf74",
-                                    },
-                                    position: "top-center",
-                                }
-                            );
-                        },
-                    }
-                );
+                router.delete(route("catalogos.deleteDestinatario", { id }), {
+                    preserveScroll: true,
+                    onSuccess: (page) => {
+                        toast("Correcto: Se elimino el destinatario externo.", {
+                            style: {
+                                padding: "25px",
+                                color: "#fff",
+                                backgroundColor: "#29bf74",
+                            },
+                            position: "top-center",
+                        });
+                    },
+                });
             }
         });
     };
@@ -141,9 +132,7 @@ export default function DestinatariosExternos({
         }).then((result) => {
             if (result.isConfirmed) {
                 router.put(
-                    getFullUrl(
-                        `/catalogos/destinatarios-externos/reactiva/${id}`
-                    ),
+                    route("catalogos.reactivateDestinatario", { id }),
                     {},
                     {
                         preserveScroll: true,

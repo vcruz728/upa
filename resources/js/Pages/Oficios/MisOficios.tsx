@@ -308,8 +308,11 @@ export default function Recepcion({
                                                                 user.rol ==
                                                                     3 ? (
                                                                     <Link
-                                                                        href={getFullUrl(
-                                                                            `/oficios/revisa-respuesta/${row.id}`
+                                                                        href={route(
+                                                                            "viewRespOficio",
+                                                                            {
+                                                                                id: row.id,
+                                                                            }
                                                                         )}
                                                                     >
                                                                         <Button
@@ -325,8 +328,11 @@ export default function Recepcion({
                                                                 {row.respuesta ==
                                                                 0 ? (
                                                                     <Link
-                                                                        href={getFullUrl(
-                                                                            `/oficios/responder/${row.id}`
+                                                                        href={route(
+                                                                            "oficioResponder",
+                                                                            {
+                                                                                id: row.id,
+                                                                            }
                                                                         )}
                                                                         style={{
                                                                             color: "white",
@@ -345,12 +351,16 @@ export default function Recepcion({
                                                                             variant={
                                                                                 user.rol ==
                                                                                     4 &&
-                                                                                row.descripcion_rechazo_jefe !==
-                                                                                    null
+                                                                                (row.descripcion_rechazo_jefe !==
+                                                                                    null ||
+                                                                                    row.descripcion_rechazo_final !==
+                                                                                        null)
                                                                                     ? "danger"
                                                                                     : "warning"
                                                                             }
-                                                                            title="Responder al oficio"
+                                                                            title={
+                                                                                "Responder al oficio"
+                                                                            }
                                                                         >
                                                                             <i className="fa fa-mail-reply"></i>
                                                                         </Button>
@@ -503,52 +513,43 @@ export default function Recepcion({
                                                                     rowData.color
                                                                 );
                                                             },
-                                                            width: "5%",
                                                         },
                                                         {
                                                             data: "f_ingreso",
                                                             title: "Fecha de ingreso",
-                                                            width: "10%",
                                                         },
                                                         {
                                                             data: "des",
                                                             title: "Ingreso",
-                                                            width: "10%",
                                                         },
                                                         {
                                                             data: "destinatario",
                                                             title: "Destinatario",
-                                                            width: "10%",
                                                         },
                                                         {
                                                             data: "numero_oficio",
                                                             title: "No. Oficio / Folio",
-                                                            width: "5%",
                                                         },
                                                         {
                                                             data: "area",
                                                             title: "Área",
-                                                            width: "10%",
                                                         },
                                                         {
                                                             data: "proceso",
                                                             title: "Proceso",
-                                                            width: "10%",
                                                         },
                                                         {
                                                             data: "descripcion",
                                                             title: "Breve descripción",
-                                                            width: "40%",
                                                         },
                                                         {
                                                             data: "proceso",
-                                                            width: "15%",
                                                             title: "Acciones",
                                                         },
                                                     ]}
                                                     className="display table-bordered  border-bottom ancho100"
                                                     slots={{
-                                                        6: (
+                                                        8: (
                                                             data: any,
                                                             row: any
                                                         ) => (
@@ -582,9 +583,7 @@ export default function Recepcion({
                                                                         setVariables(
                                                                             {
                                                                                 ...variables,
-                                                                                urlPdf: getFullUrl(
-                                                                                    `imprime/pdf/0/${row.id}`
-                                                                                ),
+                                                                                urlPdf: row.oficio_final,
                                                                                 extension:
                                                                                     "pdf",
                                                                             }
@@ -763,8 +762,11 @@ export default function Recepcion({
                                                                 row.id_usuario !==
                                                                     null ? (
                                                                     <Link
-                                                                        href={getFullUrl(
-                                                                            `/oficios/nuevo/revisa-respuesta/${row.id}`
+                                                                        href={route(
+                                                                            "viewRespNuevoOficio",
+                                                                            {
+                                                                                id: row.id,
+                                                                            }
                                                                         )}
                                                                     >
                                                                         <Button
@@ -801,43 +803,6 @@ export default function Recepcion({
                                                                     </Button>
                                                                 )}
 
-                                                                {row.descripcion_rechazo_jefe ===
-                                                                    null &&
-                                                                user.rol !==
-                                                                    4 ? null : (
-                                                                    <Link
-                                                                        href={getFullUrl(
-                                                                            `/oficios/nuevo-oficio/${row.id}`
-                                                                        )}
-                                                                        style={{
-                                                                            color: "white",
-                                                                        }}
-                                                                        hidden={
-                                                                            row.id_usuario !==
-                                                                                null &&
-                                                                            user.rol ==
-                                                                                3
-                                                                                ? true
-                                                                                : false
-                                                                        }
-                                                                    >
-                                                                        <Button
-                                                                            className="btn-icon btn btn-warning mr-1"
-                                                                            variant={
-                                                                                user.rol ==
-                                                                                    4 &&
-                                                                                row.descripcion_rechazo_jefe !==
-                                                                                    null
-                                                                                    ? "danger"
-                                                                                    : "warning"
-                                                                            }
-                                                                            title="Responder al oficio 1"
-                                                                        >
-                                                                            <i className="fa fa-mail-reply"></i>
-                                                                        </Button>
-                                                                    </Link>
-                                                                )}
-
                                                                 {user.rol ==
                                                                     3 &&
                                                                 row.id_usuario ===
@@ -847,8 +812,11 @@ export default function Recepcion({
                                                                 row.enviado ===
                                                                     null ? (
                                                                     <Link
-                                                                        href={getFullUrl(
-                                                                            `/oficios/nuevo-oficio/${row.id}`
+                                                                        href={route(
+                                                                            "nuevoOficio",
+                                                                            {
+                                                                                id: row.id,
+                                                                            }
                                                                         )}
                                                                         style={{
                                                                             color: "white",
@@ -869,29 +837,95 @@ export default function Recepcion({
                                                                     </Link>
                                                                 ) : null}
 
-                                                                <Button
-                                                                    className="btn-icon "
-                                                                    variant="danger"
-                                                                    title="Ver PDF del oficio"
-                                                                    onClick={() => {
-                                                                        setVariables(
+                                                                {user.rol ==
+                                                                    4 &&
+                                                                row.id_usuario !==
+                                                                    null &&
+                                                                row.finalizado ===
+                                                                    null &&
+                                                                row.enviado ===
+                                                                    null &&
+                                                                row.revision ===
+                                                                    0 ? (
+                                                                    <Link
+                                                                        href={route(
+                                                                            "nuevoOficio",
                                                                             {
-                                                                                ...variables,
-                                                                                urlPdf: getFullUrl(
-                                                                                    `imprime/nuevo/pdf/${row.id}`
-                                                                                ),
-                                                                                extension:
-                                                                                    "pdf",
+                                                                                id: row.id,
                                                                             }
-                                                                        );
+                                                                        )}
+                                                                        style={{
+                                                                            color: "white",
+                                                                        }}
+                                                                    >
+                                                                        <Button
+                                                                            className="btn-icon btn btn-warning mr-1"
+                                                                            variant={
+                                                                                row.descripcion_rechazo_final !==
+                                                                                    null ||
+                                                                                row.descripcion_rechazo_jefe !==
+                                                                                    null
+                                                                                    ? "danger"
+                                                                                    : "warning"
+                                                                            }
+                                                                            title="editar el oficio"
+                                                                        >
+                                                                            <i className="fa fa-mail-reply"></i>
+                                                                        </Button>
+                                                                    </Link>
+                                                                ) : null}
 
-                                                                        setShow(
-                                                                            true
-                                                                        );
-                                                                    }}
-                                                                >
-                                                                    <i className="fa fa-eye"></i>
-                                                                </Button>
+                                                                {row.masivo ==
+                                                                    1 &&
+                                                                row.archivo !==
+                                                                    null &&
+                                                                row.archivo.substring(
+                                                                    row?.archivo
+                                                                        .length -
+                                                                        3
+                                                                ) !== "pdf" ? (
+                                                                    <Button
+                                                                        className="btn-icon"
+                                                                        variant="primary"
+                                                                        title="Ver Word del oficio"
+                                                                        onClick={() => {
+                                                                            window.open(
+                                                                                getFullUrl(
+                                                                                    `/files/${row.archivo}`
+                                                                                ),
+                                                                                "_blank"
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <i className="fa fa-eye"></i>
+                                                                    </Button>
+                                                                ) : (
+                                                                    <Button
+                                                                        className="btn-icon "
+                                                                        variant="danger"
+                                                                        title="Ver PDF del oficio"
+                                                                        onClick={() => {
+                                                                            setVariables(
+                                                                                {
+                                                                                    ...variables,
+                                                                                    urlPdf:
+                                                                                        row.masivo ==
+                                                                                        1
+                                                                                            ? row.archivo
+                                                                                            : `imprime/nuevo/pdf/${row.id}`,
+                                                                                    extension:
+                                                                                        "pdf",
+                                                                                }
+                                                                            );
+
+                                                                            setShow(
+                                                                                true
+                                                                            );
+                                                                        }}
+                                                                    >
+                                                                        <i className="fa fa-eye"></i>
+                                                                    </Button>
+                                                                )}
                                                             </div>
                                                         ),
                                                     }}

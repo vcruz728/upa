@@ -25,13 +25,13 @@ import InputError from "../InputError";
 import toast from "react-hot-toast";
 import VerPdf from "@/types/VerPdf";
 import LineaTiempo from "@/types/LineaTiempo";
-import { getFullUrl } from "../../types/url";
 
 DataTable.use(DT);
 
 type FormIn = {
     id: number;
     archivo: File | null;
+    tipo: string;
 };
 
 const OficiosRespuestas = ({
@@ -90,6 +90,7 @@ const OficiosRespuestas = ({
     const form = useForm<FormIn>({
         id: 0,
         archivo: null,
+        tipo: "",
     });
 
     const submit: FormEventHandler = (e) => {
@@ -252,8 +253,11 @@ const OficiosRespuestas = ({
                                                                         onClick={() => {
                                                                             form.clearErrors();
                                                                             form.setData(
-                                                                                "id",
-                                                                                row.id
+                                                                                {
+                                                                                    ...data,
+                                                                                    id: row.id,
+                                                                                    tipo: "respuesta",
+                                                                                }
                                                                             );
                                                                             setShow(
                                                                                 true
@@ -264,8 +268,11 @@ const OficiosRespuestas = ({
                                                                     </Button>
                                                                 ) : (
                                                                     <Link
-                                                                        href={getFullUrl(
-                                                                            `/oficios/revisa-respuesta/${row.id}`
+                                                                        href={route(
+                                                                            "viewRespOficio",
+                                                                            {
+                                                                                id: row.id,
+                                                                            }
                                                                         )}
                                                                     >
                                                                         <Button
@@ -384,7 +391,7 @@ const OficiosRespuestas = ({
                                                                         setVariables(
                                                                             {
                                                                                 ...variables,
-                                                                                urlPdf: `imprime/pdf/0/${row.id}`,
+                                                                                urlPdf: row.oficio_final,
                                                                                 extension:
                                                                                     "pdf",
                                                                             }
@@ -566,8 +573,11 @@ const OficiosRespuestas = ({
                                                                             onClick={() => {
                                                                                 form.clearErrors();
                                                                                 form.setData(
-                                                                                    "id",
-                                                                                    row.id
+                                                                                    {
+                                                                                        ...data,
+                                                                                        id: row.id,
+                                                                                        tipo: "nuevo",
+                                                                                    }
                                                                                 );
                                                                                 setShow(
                                                                                     true
@@ -601,8 +611,11 @@ const OficiosRespuestas = ({
                                                                 ) : row.finalizado ===
                                                                   null ? null : (
                                                                     <Link
-                                                                        href={getFullUrl(
-                                                                            `/oficios/nuevo/revisa-respuesta/${row.id}`
+                                                                        href={route(
+                                                                            "viewRespNuevoOficio",
+                                                                            {
+                                                                                id: row.id,
+                                                                            }
                                                                         )}
                                                                     >
                                                                         <Button

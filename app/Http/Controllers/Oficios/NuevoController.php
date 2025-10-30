@@ -20,7 +20,8 @@ use App\Mail\Oficios\Enviado;
 use App\Mail\Oficios\RechazoRespuestaJefe;
 use App\Mail\Oficios\RechazoRespuestaFinal;
 use Illuminate\Support\Facades\Mail;
-
+use App\Models\Oficios\DestinatarioOficio;
+use DB;
 
 class NuevoController extends Controller
 {
@@ -30,8 +31,6 @@ class NuevoController extends Controller
 		$directorio = Directorio::select('id as value','nombre as label')->whereNotIn('id', function ($query) use ($id) {
         	$query->select('id_directorio')->from('oficios_copias')->where('id_nuevo_oficio', $id)->whereNotNull('id_directorio');
     	})->orderBy('nombre')->get();
-
-		$directorioAll = Directorio::getSel();
 
 		$copy = Copia::select('id','id_nuevo_oficio','id_directorio','nombre','cargo','dependencia')->where('id_nuevo_oficio', $id)->get();
 		
@@ -67,12 +66,44 @@ class NuevoController extends Controller
             ];
         });
 		
-		$externos = DestinatarioExterno::getSel();
 
-		return Inertia::render('Oficios/Nuevo', ['status' => session('status'), 'externos' => $externos, 'oficio' => $oficio,'files' => $archivos, 'directorio' => $directorio, 'copy' => $copy, 'directorioAll' => $directorioAll]);
+		$externos = DestinatarioExterno::select('id as value','nombre as label')->whereNotIn('id', function ($query) use ($id) {
+        	$query->select('id_usuario')->from('destinatarios_oficio')->where('id_oficio', $id)->where('tipo_usuario', 2)->get();
+    	})->orderBy('nombre')->get();
+
+		$directorioAll = Directorio::select('id as value','nombre as label')->whereNotIn('id', function ($query) use ($id) {
+        	$query->select('id_usuario')->from('destinatarios_oficio')->where('id_oficio', $id)->where('tipo_usuario', 1);
+    	})->orderBy('nombre')->get();
+
+
+		$destinatarios = DestinatarioOficio::select(
+			'destinatarios_oficio.id',
+			DB::raw("COALESCE(directorios.nombre, cat_destinatarios_externos.nombre) as nombre"),
+			DB::raw("COALESCE(directorios.cargo, cat_destinatarios_externos.cargo) as cargo"),
+			DB::raw("COALESCE(directorios.dependencia, cat_destinatarios_externos.dependencia) as dependencia"),
+			'destinatarios_oficio.tipo_usuario',
+			'destinatarios_oficio.id_usuario'
+		)
+		->leftJoin('directorios', function($join)
+		{
+			$join->on('destinatarios_oficio.tipo_usuario', '=', DB::raw("1"));
+			$join->on('destinatarios_oficio.id_usuario', '=', 'directorios.id');
+
+		})
+		->leftJoin('cat_destinatarios_externos', function($join)
+		{
+			$join->on('destinatarios_oficio.tipo_usuario', '=', DB::raw("2"));
+			$join->on('destinatarios_oficio.id_usuario', '=', 'cat_destinatarios_externos.id');
+
+		})
+		->where('destinatarios_oficio.id_oficio', $id)
+		->orderBy('destinatarios_oficio.id', 'desc')
+		->get();
+
+		return Inertia::render('Oficios/Nuevo', ['status' => session('status'), 'error' => session('error'), 'destinatariosOficio' => $destinatarios, 'externos' => $externos, 'oficio' => $oficio,'files' => $archivos, 'directorio' => $directorio, 'copy' => $copy, 'directorioAll' => $directorioAll]);
 	}
 
-    public function exportapdf($id)
+    public function exportapdf($id, $id_usuario, $tipo_usuario)
 	{
 		$fecha = date('Y-m-d');
 
@@ -97,27 +128,28 @@ class NuevoController extends Controller
 		$oficio = Nuevo::select(
             'nuevos_oficios.iniciales_area as area',
             'nuevos_oficios.iniciales_proceso as proceso',
-			'cat_areas.siglas'
+			'cat_areas.siglas',
 		)
 
 		->join('cat_areas', 'cat_areas.id', 'nuevos_oficios.id_area')
 		->where('nuevos_oficios.id', $id)
 		->first();
 
+
+		$tabla = $tipo_usuario == 1 ? 'directorios' : 'cat_destinatarios_externos';
+
         $respuesta = Nuevo::select(
             'nuevos_oficios.oficio_respuesta',
-            'nuevos_oficios.id_directorio',
-            'nuevos_oficios.tipo_destinatario',
-            'nuevos_oficios.nombre',
-            'nuevos_oficios.cargo',
-            'nuevos_oficios.dependencia',
-            'nuevos_oficios.respuesta',
-            'nuevos_oficios.descripcion_rechazo_jefe',
-            'nuevos_oficios.descripcion_rechazo_final',
-            'nuevos_oficios.iniciales_area as area',
-            'nuevos_oficios.iniciales_proceso as proceso',
-            'nuevos_oficios.enviado',
+            "$tabla.nombre",
+			"$tabla.cargo",
+			"$tabla.dependencia",
+            'nuevos_oficios.respuesta'
 		)
+		->leftJoin($tabla, function($join) use ($id_usuario, $tabla)
+		{
+			$join->on("$tabla.id",'=', DB::raw("$id_usuario"));
+
+		})
 		->where('nuevos_oficios.id', $id)
 		->first();
         
@@ -136,11 +168,6 @@ class NuevoController extends Controller
 
     public function saveNuevo(Request $request){
 		$request->validate([
-			'destinatarioDos' => 'required',
-			'dirigido_aDos' => 'required_if:destinatarioDos,Interno',
-			'nombreDos' => 'required|min:2|max:155',
-			'cargoDos' => 'required|min:2|max:255',
-			'dependenciaDos' => 'required|min:2|max:255',
 			'asunto' => 'nullable|min:2|max:8000'
 		]);
 
@@ -163,11 +190,7 @@ class NuevoController extends Controller
         $jefe = User::select('iniciales')->where('rol',3)->where('id_area', \Auth::user()->id_area)->first();
 
 		
-		$respuesta->id_directorio =  $request->dirigido_aDos;
-		$respuesta->tipo_destinatario = $request->destinatarioDos;
-		$respuesta->nombre = $request->nombreDos;
-		$respuesta->cargo = $request->cargoDos;
-		$respuesta->dependencia = $request->dependenciaDos;
+		
 		$respuesta->respuesta = $request->asunto;
         $respuesta->iniciales_area = $jefe->iniciales;
 
@@ -283,7 +306,7 @@ class NuevoController extends Controller
 			$asis = User::where('rol',5)->first();
 			Mail::to($asis->email)->later(now()->addSeconds(2), new JefeNuevo($asis->name, $id));
 			
-		}else if(\Auth::user()->rol == 4){
+		}else if(\Auth::user()->rol == 4 || \Auth::user()->rol == 2){
             $oficio->revision = 1;
 			$usuario = infoUsuario($oficio->id_usuario);
 			Mail::to($jefe->email)->later(now()->addSeconds(2), new ColaboradorNuevo($jefe->name, $usuario->name, $id));
@@ -328,10 +351,74 @@ class NuevoController extends Controller
             
         });
 
+		$oficio = Nuevo::find($id);
+
+		$destinatarios = DestinatarioOficio::select(
+			'destinatarios_oficio.id',
+			DB::raw("COALESCE(directorios.nombre, cat_destinatarios_externos.nombre) as nombre"),
+			DB::raw("COALESCE(directorios.cargo, cat_destinatarios_externos.cargo) as cargo"),
+			DB::raw("COALESCE(directorios.dependencia, cat_destinatarios_externos.dependencia) as dependencia"),
+			'destinatarios_oficio.tipo_usuario',
+			'destinatarios_oficio.id_usuario'
+		)
+		->leftJoin('directorios', function($join)
+		{
+			$join->on('destinatarios_oficio.tipo_usuario', '=', DB::raw("1"));
+			$join->on('destinatarios_oficio.id_usuario', '=', 'directorios.id');
+
+		})
+		->leftJoin('cat_destinatarios_externos', function($join)
+		{
+			$join->on('destinatarios_oficio.tipo_usuario', '=', DB::raw("2"));
+			$join->on('destinatarios_oficio.id_usuario', '=', 'cat_destinatarios_externos.id');
+
+		})
+		->where('destinatarios_oficio.id_oficio', $id)
+		->orderBy('destinatarios_oficio.id', 'desc')
+		->get();
+
     	return Inertia::render('Oficios/RevisaNuevo', [
             'status' => session('status'),
             'id' => $id,
 			'archivos' => $archivos,
+			'destinatariosOficio' => $destinatarios,
+			'oficio' => $oficio,
+        ]);
+    }
+
+	public function detalleOficio($id)
+	{
+
+		$oficio = Nuevo::find($id);
+
+		$destinatarios = DestinatarioOficio::select(
+			'destinatarios_oficio.id',
+			DB::raw("COALESCE(directorios.nombre, cat_destinatarios_externos.nombre) as nombre"),
+			DB::raw("COALESCE(directorios.cargo, cat_destinatarios_externos.cargo) as cargo"),
+			DB::raw("COALESCE(directorios.dependencia, cat_destinatarios_externos.dependencia) as dependencia"),
+			'destinatarios_oficio.tipo_usuario',
+			'destinatarios_oficio.id_usuario'
+		)
+		->leftJoin('directorios', function($join)
+		{
+			$join->on('destinatarios_oficio.tipo_usuario', '=', DB::raw("1"));
+			$join->on('destinatarios_oficio.id_usuario', '=', 'directorios.id');
+
+		})
+		->leftJoin('cat_destinatarios_externos', function($join)
+		{
+			$join->on('destinatarios_oficio.tipo_usuario', '=', DB::raw("2"));
+			$join->on('destinatarios_oficio.id_usuario', '=', 'cat_destinatarios_externos.id');
+
+		})
+		->where('destinatarios_oficio.id_oficio', $id)
+		->orderBy('destinatarios_oficio.id', 'desc')
+		->get();
+
+    	return Inertia::render('Oficios/DetalleNuevoOficio', [
+            'id' => $id,
+			'destinatariosOficio' => $destinatarios,
+			'oficio' => $oficio,
         ]);
     }
 
@@ -435,4 +522,115 @@ class NuevoController extends Controller
 			return to_route('oficiosRespuestas');
 		}
     }
+
+
+	public function saveGrupal(){
+
+		$ultimo = Variables::where('variable','Oficio')->first();
+		$oficio = ($ultimo->valor + 1);
+		Variables::where('variable','Oficio')->update(['valor' => $oficio]);
+
+		$jefe = User::select('iniciales')->where('rol',3)->where('id_area', \Auth::user()->id_area)->first();
+
+
+		$nuevo = new Nuevo();
+		$nuevo->oficio_respuesta = $oficio;
+		$nuevo->id_area = \Auth::user()->id_area;
+		$nuevo->iniciales_area = $jefe->iniciales;
+		$nuevo->id_usuario = \Auth::user()->rol == 4 ? \Auth::user()->id : null;
+		$nuevo->iniciales_proceso =  \Auth::user()->rol == 4 ? \Auth::user()->iniciales : null;
+		$nuevo->masivo = 1;
+		if(\Auth::user()->rol == 3){
+			$nuevo->revision = 1;
+		}
+		$nuevo->save();
+
+		return redirect()->route('nuevoOficio',['id' => $nuevo->id])->with('status', "Se asigno el folio al oficio.");
+	}
+
+	public function saveNuevoOficioGrupal(Request $request)
+	{
+		$oficio = Nuevo::find($request->id);
+		if (!$oficio) {
+			return back()->with('error', "No se encontro el oficio." . '|' . time());
+		}
+
+		$valid = $oficio->archivo == null ? 'required' : 'nullable';
+
+		$request->validate([
+			'descripcion' => 'required|min:2|max:2000',
+			'archivo' => $valid.'|file|max:5120|mimes:pdf,doc,docx',
+		]);
+
+
+		$oficio->descripcion = $request->descripcion;
+
+		if($request->file('archivo')){
+			$archivo = 'adjuntos_oficios/'.time()."_".\Auth::user()->id."_".$request->archivo->getClientOriginalName();
+			$path = \Storage::disk('files')->put($archivo, \File::get($request->archivo));
+			$oficio->archivo = $archivo;
+		}
+
+		
+
+		$jefe = User::where('rol',3)->where('id_area', $oficio->id_area)->first();
+		
+        if(\Auth::user()->rol == 3){
+            $oficio->revision = 1;
+			$oficio->finalizado = 1;
+			
+			$asis = User::where('rol',5)->first();
+			Mail::to($asis->email)->later(now()->addSeconds(2), new JefeNuevo($asis->name, $request->id));
+			
+		}else if(\Auth::user()->rol == 4 || \Auth::user()->rol == 2){
+            $oficio->revision = 1;
+			$usuario = infoUsuario($oficio->id_usuario);
+			Mail::to($jefe->email)->later(now()->addSeconds(2), new ColaboradorNuevo($jefe->name, $usuario->name, $request->id));
+        }else if(\Auth::user()->rol == 5){
+			$oficio->finalizado = 1;
+			$oficio->enviado = 1;
+			$oficio->fecha_respuesta = date('Y-m-d H:i:s');
+		}
+
+        $oficio->descripcion_rechazo_jefe = null;
+		$oficio->descripcion_rechazo_final = null;
+		$oficio->save();
+
+		return to_route('misOficios');
+
+		
+		
+	}
+
+
+	public function saveDestinatario(Request $request){
+		$request->validate([
+			'id' => 'required',
+			'tipo' => 'required',
+		],
+		[
+			'id.required' => 'El campo "Dirigido a" es obligatorio.',
+			'tipo.required' => 'El campo destinatario es obligatorio.',
+		]);
+
+		$destinatario = new DestinatarioOficio();
+		$destinatario->tipo_usuario = $request->tipo;
+		$destinatario->id_usuario = $request->id;
+		$destinatario->id_oficio = $request->id_oficio;
+		$destinatario->save();
+
+		return back()->with('status', "Se guardo el destinatario.");
+	}
+
+	public function deleteDestinatario($id){
+		$elimina = DestinatarioOficio::find($id);
+		if($elimina){
+			$elimina->delete();
+			return back()->with('status', "Se elimino el destinatario.");
+		}
+		return back()->with('error', "No se encontro el destinatario.");
+	}
+
+
+	
 }

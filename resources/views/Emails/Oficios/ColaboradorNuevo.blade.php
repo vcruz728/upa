@@ -13,7 +13,7 @@
                     <!-- Header -->
                     <tr>
                         <td class="header" style="background-color: #122e48; padding: 40px; text-align: center; color: white; font-size: 24px;">
-                        Sistema Administrativo VD
+                        Sistema Administrativo UPA
                         </td>
                     </tr>
 
@@ -43,7 +43,7 @@
                     <!-- Footer -->
                     <tr>
                         <td class="footer" style="background-color: #122e48; padding: 40px; text-align: center; color: white; font-size: 14px;">
-                        BUAP - Vicerrectoría de Docencia
+                        BUAP - UPA
                         </td>
                     </tr>
                 </table>

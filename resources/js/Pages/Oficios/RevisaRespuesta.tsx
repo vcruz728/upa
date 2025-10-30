@@ -20,7 +20,6 @@ import VerPdf from "@/types/VerPdf";
 import { Head } from "@inertiajs/react";
 import Swal from "sweetalert2";
 import InputError from "../InputError";
-import { getFullUrl } from "../../types/url";
 
 type FormIn = {
     id: number;
@@ -114,9 +113,7 @@ export default function FormOficio({
             denyButtonText: `Cancelar`,
         }).then((result) => {
             if (result.isConfirmed) {
-                router.put(
-                    getFullUrl(`/oficios/autoriza/respuesta/${oficio.id}`)
-                );
+                router.put(route("oficios.aceptResp", { id: oficio.id }));
             }
         });
     };
@@ -438,8 +435,11 @@ export default function FormOficio({
                                                 className="mb-5 d-flex justify-content-end"
                                             >
                                                 <a
-                                                    href={getFullUrl(
-                                                        `/oficios/descargar-archivos-adjuntos/${oficio.id}`
+                                                    href={route(
+                                                        "oficios.downloadFiles",
+                                                        {
+                                                            id: oficio.id,
+                                                        }
                                                     )}
                                                     target="_BLANK"
                                                     className="btn btn-warning btn-lg mb-1"
@@ -497,9 +497,9 @@ export default function FormOficio({
                                         className="d-flex justify-content-center"
                                     >
                                         <Link
-                                            href={getFullUrl(
-                                                `/oficios/responder/${oficio.id}`
-                                            )}
+                                            href={route("oficioResponder", {
+                                                id: oficio.id,
+                                            })}
                                             className="btn btn-primary btn-lg"
                                         >
                                             {user.rol == 5

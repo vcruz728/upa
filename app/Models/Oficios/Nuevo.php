@@ -12,5 +12,6 @@ class Nuevo extends Model
     	'finalizado' => 'integer',
         'enviado' => 'integer',
         'revision' => 'integer',
+        'masivo' => 'integer',
     ];
 }

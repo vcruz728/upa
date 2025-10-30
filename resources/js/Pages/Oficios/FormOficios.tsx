@@ -14,7 +14,6 @@ import PageHeader from "../../Layouts/layoutcomponents/pageHeader";
 import "filepond/dist/filepond.min.css";
 import Select, { SelectInstance } from "react-select";
 import InputError from "../InputError";
-import { getFullUrl } from "../../types/url";
 import VerPdf from "@/types/VerPdf";
 import { Head } from "@inertiajs/react";
 import Swal from "sweetalert2";
@@ -136,12 +135,9 @@ export default function FormOficio({
     const getProcesos = async (id: number) => {
         selectPro.current!.clearValue();
 
-        const response = await fetch(
-            getFullUrl(`/peticiones/get/procesos-por-area/${id}`),
-            {
-                method: "get",
-            }
-        );
+        const response = await fetch(route("getProcesosPorArea", { id }), {
+            method: "get",
+        });
 
         const datos = await response.json();
 
@@ -152,7 +148,6 @@ export default function FormOficio({
 
     useEffect(() => {
         if (oficio?.id !== undefined) {
-            console.log("Efecto ejecutado en cada renderizado");
             selectDep.current!.selectOption({
                 value: oficio.dep_ua,
                 label: oficio.des,

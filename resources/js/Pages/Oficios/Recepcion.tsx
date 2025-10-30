@@ -12,7 +12,6 @@ import language from "datatables.net-plugins/i18n/es-MX.mjs";
 import LineaTiempo from "@/types/LineaTiempo";
 import $ from "jquery";
 import VerPdf from "@/types/VerPdf";
-import { getFullUrl } from "../../types/url";
 
 DataTable.use(DT);
 
@@ -95,8 +94,8 @@ export default function Recepcion({ oficios }: { oficios: [] }) {
                                             >
                                                 <Link
                                                     className="btn btn-primary"
-                                                    href={getFullUrl(
-                                                        "/oficios/recepcion-oficio"
+                                                    href={route(
+                                                        "oficios.recepcionOficio"
                                                     )}
                                                 >
                                                     <i className="fe fe-plus me-2"></i>
@@ -171,8 +170,11 @@ export default function Recepcion({ oficios }: { oficios: [] }) {
                                                                 <div className="text-center">
                                                                     <Link
                                                                         className="btn-icon btn btn-warning"
-                                                                        href={getFullUrl(
-                                                                            `/oficios/modifica-oficio/${row.id}`
+                                                                        href={route(
+                                                                            "oficios.modificaOficio",
+                                                                            {
+                                                                                id: row.id,
+                                                                            }
                                                                         )}
                                                                     >
                                                                         <i className="fe fe-edit"></i>
@@ -305,7 +307,7 @@ export default function Recepcion({ oficios }: { oficios: [] }) {
                                                                         setVariables(
                                                                             {
                                                                                 ...variables,
-                                                                                urlPdf: `imprime/pdf/0/${row.id}`,
+                                                                                urlPdf: row.oficio_final,
                                                                                 extension:
                                                                                     "pdf",
                                                                             }

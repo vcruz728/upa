@@ -45,10 +45,10 @@ class OficioController extends Controller
 
     	$oficios = Oficio::select(
     		DB::raw("CASE 
-			WHEN DATEDIFF ( MINUTE, convert(varchar, oficios.created_at, 120)  , convert(varchar, fecha_respuesta, 120) ) < cat_areas.minutos_oficio AND fecha_respuesta IS NOT NULL THEN '#5fd710'
-			WHEN DATEDIFF ( MINUTE, convert(varchar, oficios.created_at, 120)  , convert(varchar, getdate(), 120) ) < cat_areas.minutos_oficio AND fecha_respuesta IS NULL THEN '#f5f233'
-			WHEN DATEDIFF ( MINUTE, convert(varchar, oficios.created_at, 120)  , convert(varchar, getdate(), 120) ) > cat_areas.minutos_oficio AND fecha_respuesta IS NULL THEN '#f98200'
-			WHEN DATEDIFF ( MINUTE, convert(varchar, oficios.created_at, 120)  , convert(varchar, fecha_respuesta, 120) ) > cat_areas.minutos_oficio AND fecha_respuesta IS NOT NULL THEN '#ff2d2d'
+			WHEN DATEDIFF ( MINUTE, convert(varchar, oficios.created_at, 120)  , convert(varchar, oficios.fecha_respuesta, 120) ) < cat_areas.minutos_oficio AND oficios.fecha_respuesta IS NOT NULL THEN '#5fd710'
+			WHEN DATEDIFF ( MINUTE, convert(varchar, oficios.created_at, 120)  , convert(varchar, getdate(), 120) ) < cat_areas.minutos_oficio AND oficios.fecha_respuesta IS NULL THEN '#f5f233'
+			WHEN DATEDIFF ( MINUTE, convert(varchar, oficios.created_at, 120)  , convert(varchar, getdate(), 120) ) > cat_areas.minutos_oficio AND oficios.fecha_respuesta IS NULL THEN '#f98200'
+			WHEN DATEDIFF ( MINUTE, convert(varchar, oficios.created_at, 120)  , convert(varchar, oficios.fecha_respuesta, 120) ) > cat_areas.minutos_oficio AND oficios.fecha_respuesta IS NOT NULL THEN '#ff2d2d'
 			ELSE '#000000' END as color"),
     		DB::raw("CONCAT( RIGHT('0'+cast(DAY(oficios.created_at) as varchar(2)),2) ,' de ', dbo.fn_GetMonthName (oficios.created_at, 'Spanish'),' de ',YEAR(oficios.created_at),' a las ', CONVERT(VARCHAR(5),oficios.created_at,108)) as f_ingreso"),
     		'oficios.id',
@@ -70,7 +70,9 @@ class OficioController extends Controller
 			'oficios.descripcion_rechazo',
 			'oficios.finalizado',
 			'oficios.respuesta',
+			'oficios.oficio_final',
 			'oficios.descripcion_rechazo_jefe',
+			'descripcion_rechazo_final',
 			DB::raw("RIGHT(oficios.archivo_respuesta, 3) as extension"),
 			'respuestas_oficio.nombre as destinatario'
     	)
@@ -99,6 +101,8 @@ class OficioController extends Controller
 			'id_usuario',
 			'descripcion_rechazo_jefe',
 			'descripcion_rechazo_final',
+			'archivo',
+			'masivo',
 			DB::raw("CONCAT( RIGHT('0'+cast(DAY(nuevos_oficios.created_at) as varchar(2)),2) ,' de ', dbo.fn_GetMonthName (nuevos_oficios.created_at, 'Spanish'),' de ',YEAR(nuevos_oficios.created_at),' a las ', CONVERT(VARCHAR(5),nuevos_oficios.created_at,108)) as f_ingreso"),
 			DB::raw("RIGHT(nuevos_oficios.archivo_respuesta, 3) as extension"),
 		)
@@ -132,7 +136,7 @@ class OficioController extends Controller
 
 		$copy = Copia::select('id','id_oficio','id_directorio','nombre','cargo','dependencia')->where('id_oficio', $id)->get();
 		
-		$respuesta = RespuestaOficio::select('id','id_oficio', 'tipo_destinatario', 'nombre','cargo', 'dependencia', 'id_directorio', 'respuesta')
+		$respuesta = RespuestaOficio::select('id','id_oficio', 'tipo_destinatario', 'nombre','cargo', 'dependencia', 'id_directorio', 'respuesta', 'comentario')
 		->where('id_oficio', $id)
 		->first();
 
@@ -195,11 +199,14 @@ class OficioController extends Controller
 			'oficios.descripcion_rechazo',
 			'oficios.finalizado',
 			'oficios.ingreso',
-
+			'respuestas_oficio.comentario',
+			'respuestas_oficio.id as id_respuesta',
+			'respuestas_oficio.fecha_respuesta'
     	)
     	->join('cat_des','cat_des.id','oficios.dep_ua')
     	->join('cat_areas','cat_areas.id','oficios.area')
     	->join('cat_procesos','cat_procesos.id','oficios.proceso_impacta')
+		->join('respuestas_oficio','respuestas_oficio.id_oficio','oficios.id')
     	->Leftjoin('users','users.id','oficios.id_usuario')
     	->where('oficios.id', $id)
     	->first();
@@ -255,6 +262,7 @@ class OficioController extends Controller
 			'oficios.area as id_area',
 			'oficios.enviado',
 			'oficios.archivo_respuesta',
+			'oficios.oficio_final',
 			DB::raw("RIGHT(oficios.archivo_respuesta, 3) as extension"),
     	)
     	->join('cat_areas','cat_areas.id','oficios.area')
@@ -395,7 +403,11 @@ class OficioController extends Controller
 			IBitacoraOficio($id,'Respuesta enviada', 'Se ha enviado la respuesta del oficio','fa fa-send-o', 'primary');
 
 			$usuario = infoUsuario($oficio->id_usuario);
-			
+
+
+			$rutaPDF = $this->exportapdf($id, 1);
+			$oficio->oficio_final = $rutaPDF;
+
 			$mail = Mail::to($jefe->email);
 			if (!empty($usuario)) {
 				$mail->cc($usuario->email);
@@ -515,7 +527,8 @@ class OficioController extends Controller
 			'nombreDos' => 'required|min:2|max:155',
 			'cargoDos' => 'required|min:2|max:255',
 			'dependenciaDos' => 'required|min:2|max:255',
-			'asunto' => 'nullable|min:2|max:8000'
+			'asunto' => 'nullable|min:2|max:8000',
+			'comentario' => 'nullable|min:2|max:1000'
 		]);
 
 		
@@ -540,6 +553,7 @@ class OficioController extends Controller
 		$respuesta->cargo = $request->cargoDos;
 		$respuesta->dependencia = $request->dependenciaDos;
 		$respuesta->respuesta = $request->asunto;
+		$respuesta->comentario = $request->comentario;
 		$respuesta->save();
 		
 		return back()->with('status', "Se guardo la respuesta del oficio.");
@@ -586,9 +600,16 @@ class OficioController extends Controller
 	 * @param int $id ID del oficio a exportar.
 	 * @return \Illuminate\Http\Response Respuesta HTTP con el PDF generado para visualización.
 	 */
-	public function exportapdf($id)
+	public function exportapdf($id, $guarda = 0)
 	{
-		$fecha = date('Y-m-d');
+		$respuesta = RespuestaOficio::where('id_oficio', $id)->first();
+
+		
+		if($respuesta->fecha_respuesta){
+			$fecha = $respuesta->fecha_respuesta;
+		}else{
+			$fecha = date('Y-m-d');
+		}
 
 		// Obtener la fecha actual en español, ejemplo: 04 de julio de 2025
 		setlocale(LC_TIME, 'es_ES.UTF-8', 'Spanish_Spain.1252');
@@ -606,7 +627,6 @@ class OficioController extends Controller
 			$fechaEscrita = "$dia de $mes de $anio";
 		}
 
-		$respuesta = RespuestaOficio::where('id_oficio', $id)->first();
 		$copias = Copia::where('id_oficio', $id)->get();
 		
 		$oficio = Oficio::select(
@@ -623,7 +643,6 @@ class OficioController extends Controller
 		->leftJoin('users as u', function($join)
 		{
 			$join->on('u.rol', '=', DB::raw("4"));
-			$join->on('u.id_proceso', '=', 'oficios.proceso_impacta');
 			$join->on('u.id', '=', 'oficios.id_usuario');
 
 		})
@@ -638,8 +657,15 @@ class OficioController extends Controller
 			'fechaEscrita' => $fechaEscrita
 		]);
 
+		if ($guarda == 1) {
+			$rutaArchivo = 'pdfs_oficios/oficio_' . $id . '_' . now()->format('YmdHis') . '.pdf';
+			$pdfContent = $pdf->output();
+			\Storage::disk('files')->put($rutaArchivo, $pdfContent);
+			
+			return $rutaArchivo;
+		}
 	
-			return $pdf->stream('respuesta_oficio.pdf');
+		return $pdf->stream('respuesta_oficio.pdf');
 		
 	}
 
@@ -734,7 +760,11 @@ class OficioController extends Controller
 		$archivo = 'recibido_oficios/'.time()."_".\Auth::user()->id."_".$request->archivo->getClientOriginalName();
 		$path = \Storage::disk('files')->put($archivo, \File::get($request->archivo));
 
-		$oficio = Oficio::find($request->id);
+		if($request->tipo == 'respuesta'){
+			$oficio = Oficio::find($request->id);
+		}else{
+			$oficio = NuevoOficio::find($request->id);
+		}
 		$oficio->archivo_respuesta = $archivo;
 		$oficio->save();
 
@@ -742,6 +772,20 @@ class OficioController extends Controller
 		return back()->with('status', "Se guardo la respuesta del oficio.");
 		
 
+	}
+
+
+	public function actualizaFecha(Request $request)
+	{
+		$request->validate([
+			'fecha' => 'required|date',
+		]);
+
+		$oficio = RespuestaOficio::find($request->id);
+		$oficio->fecha_respuesta = $request->fecha;
+		$oficio->save();
+
+		return back()->with('status', "Se actualizo la fecha de respuesta del oficio.");
 	}
 
 }

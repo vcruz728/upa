@@ -20,8 +20,13 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }
+
+    protected $commands = [
+        \App\Console\Commands\FixDestinatariosFilenames::class,
+        \App\Console\Commands\NormalizeStoredFiles::class,
+    ];
 }

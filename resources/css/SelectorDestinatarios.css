@@ -1,0 +1,124 @@
+/* —— Controles superiores —— */
+.seg-control .seg-btn {
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    font-weight: 400;
+}
+
+/* Pills de nivel */
+.pills-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.level-pills .level-pill {
+    border-radius: 9999px;
+    padding: 0.45rem 0.9rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* —— Cards —— */
+.selector-card {
+    background: #fff;
+    border-radius: 1rem;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    padding: 0.75rem 1rem;
+}
+.selector-card table {
+    font-size: 0.8rem;
+}
+
+/* —— Alto fijo + scroll —— */
+.table-fixed {
+    max-height: 360px;
+    overflow: auto;
+    border-radius: 0.75rem;
+}
+.table-fixed table {
+    margin-bottom: 0;
+}
+.table-fixed thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 2;
+    box-shadow: inset 0 -1px #e9ecef;
+}
+
+/* Hover azul */
+.table-hover tbody tr:hover > * {
+    background: rgba(13, 110, 253, 0.12) !important;
+}
+
+/* Scrollbar delgada */
+.table-fixed::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.table-fixed::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+/* ====== NUEVO: grid 1fr | 64px | 1fr para paneles + botones ====== */
+.selector-grid {
+    display: grid;
+    grid-template-columns: 1fr 64px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* Columna central para botones (vertical) */
+.btn-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.btn-stack .btn {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Responsive: en < LG se apilan (resultados → botones → seleccionados) */
+@media (max-width: 991.98px) {
+    .selector-grid {
+        display: block;
+    }
+    .btn-col {
+        display: flex;
+        justify-content: center;
+    }
+    .btn-stack {
+        flex-direction: row;
+        margin: 12px 0;
+    }
+}
+
+/* LG+: más altos / paddings */
+@media (min-width: 992px) {
+    .table-fixed {
+        max-height: 540px;
+    }
+    .selector-card {
+        padding: 1rem 1.25rem;
+    }
+    .seg-control .seg-btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.7rem;
+    }
+}
+
+/* XXL: más alto si hay espacio */
+@media (min-width: 1400px) {
+    .table-fixed {
+        max-height: 30vh;
+    }
+    .selector-card {
+        padding: 1.1rem 1.4rem;
+    }
+}

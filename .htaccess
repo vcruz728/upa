@@ -1,0 +1,26 @@
+# /vd/.htaccess  (RAÍZ DEL PROYECTO)
+Options -Indexes
+<IfModule mod_negotiation.c>
+  Options -MultiViews
+</IfModule>
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Deja pasar si ya pide algo dentro de /public
+RewriteRule ^public/ - [L]
+
+# Bloquea archivos sensibles si intentan accederlos directo
+RewriteRule ^(\.env|composer\.(json|lock)|package(-lock)?\.json|artisan|phpunit\.xml|server\.php|vite\.config\.js|webpack\.mix\.js|tsconfig\.json)$ - [F,L]
+
+# Reescribe todo lo demás hacia /public (sirve también para assets)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Bloquea dotfiles (.git, .env.*, etc.)
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
+

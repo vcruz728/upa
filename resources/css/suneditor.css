@@ -1,0 +1,394 @@
+/* ===========================
+   SunEditor - Hoja tamaño carta
+   =========================== */
+.sun-editor .se-wrapper-inner {
+    position: relative;
+    width: 21.59cm !important; /* carta ancho */
+    min-height: 27.94cm !important; /* carta alto  */
+    margin: auto;
+    background: #fff;
+
+    /* márgenes internos (guías de impresión) */
+    padding-top: 4.5cm;
+    padding-left: 4.5cm;
+    padding-right: 2.5cm;
+    padding-bottom: 2.5cm;
+
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+    font-family: "SourceSansPro", sans-serif;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* Guía visual de área imprimible */
+.sun-editor .se-wrapper-inner::before {
+    content: "";
+    position: absolute;
+    top: 4.5cm;
+    left: 4.5cm;
+    right: 2.5cm;
+    bottom: 2.5cm;
+    border: 1px dashed rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+}
+
+/* Contenedor de la hoja */
+.sun-editor {
+    border: 1px solid #ccc;
+    display: flex;
+    justify-content: center;
+    background: #eee;
+    padding: 20px 0;
+}
+
+/* dentro del editor */
+.sun-editor-editable table {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    border-spacing: 0;
+    border: 1px solid #000 !important;
+}
+.sun-editor-editable col,
+.sun-editor-editable colgroup {
+    width: auto !important;
+}
+.sun-editor-editable th,
+.sun-editor-editable td {
+    box-sizing: border-box;
+    word-break: break-word;
+    text-align: center;
+    vertical-align: middle;
+    padding: 3pt !important;
+    line-height: 1;
+    border: 1px solid #000 !important;
+}
+
+.sun-editor-editable td p,
+th p {
+    margin: 0 !important;
+    text-indent: 0 !important;
+}
+
+.sun-editor-editable td span,
+th span {
+    letter-spacing: 0 !important;
+} /* opcional, evita negativos de Word */
+
+thead {
+    display: table-header-group;
+    text-align: center;
+    vertical-align: middle;
+}
+tfoot {
+    display: table-footer-group;
+}
+tr {
+    page-break-inside: avoid;
+}
+table,
+figure {
+    page-break-inside: avoid;
+}
+
+.sun-editor-editable ul li,
+.sun-editor-editable ol li {
+    text-align: justify;
+}
+
+.sun-editor-editable figure {
+    margin: 0;
+}
+
+/* ===========================
+   Imágenes dentro del editor
+   =========================== */
+
+/* Bloque contenedor sin floats; evita que el texto lo rodee */
+.sun-editor-editable .se-component.se-image-container {
+    display: block !important;
+    float: none !important;
+    clear: both !important;
+    margin: 8px 0 !important;
+}
+
+/* Figure “en línea” para permitir centrar por text-align */
+.sun-editor-editable .se-component.se-image-container figure {
+    display: inline-block !important;
+    margin: 0 !important;
+}
+
+/* Imagen sin float; escala correcta */
+.sun-editor-editable .se-component.se-image-container img {
+    display: block !important;
+    float: none !important;
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+/* Alineación según clases de SunEditor */
+.sun-editor-editable .se-component.se-image-container.__se__float-left {
+    text-align: left !important;
+}
+.sun-editor-editable .se-component.se-image-container.__se__float-center {
+    text-align: center !important;
+}
+.sun-editor-editable .se-component.se-image-container.__se__float-right {
+    text-align: right !important;
+}
+
+/* Márgenes coherentes con la alineación */
+.sun-editor-editable .se-component.se-image-container.__se__float-left img {
+    margin-left: 0 !important;
+    margin-right: auto !important;
+}
+.sun-editor-editable .se-component.se-image-container.__se__float-center img {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+.sun-editor-editable .se-component.se-image-container.__se__float-right img {
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}
+
+/* Respeta style="text-align:..." si apareciera */
+.sun-editor-editable [style*="text-align:left"] > img {
+    display: block !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+}
+.sun-editor-editable [style*="text-align:center"] > img {
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+.sun-editor-editable [style*="text-align:right"] > img {
+    display: block !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
+}
+
+/* ===========================
+   Modal de imagen — facelift + centrado
+   =========================== */
+
+/* Estado base (cerrado): no tocamos display por defecto */
+.sun-editor .se-dialog {
+    position: fixed;
+    inset: 0;
+    display: none; /* SunEditor lo pone en block; nosotros lo “flexeamos” abajo */
+    align-items: center;
+    justify-content: center;
+    z-index: 2147483647;
+}
+
+/* Considera “abierto” en varias variantes (según versión) */
+.sun-editor .se-dialog[style*="display:block"],
+.sun-editor .se-dialog:has(.se-dialog-inner[style*="display:block"]),
+.sun-editor .se-dialog:has(.se-dialog-content[style*="display:block"]) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(17, 24, 39, 0.45);
+    backdrop-filter: blur(2px);
+}
+/* Tarjeta del modal */
+.sun-editor .se-dialog .se-dialog-inner {
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    display: grid; /* para centrar si hay varios contenidos internos */
+    place-items: center;
+    gap: 0;
+}
+
+/* Tarjeta base: oculta por defecto */
+.sun-editor .se-dialog .se-dialog-content {
+    width: min(560px, 92vw);
+    max-height: 80vh;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.22);
+    padding: 18px 20px;
+    margin: 0 !important;
+
+    /* 👇 clave: no la muestres siempre */
+    display: none;
+}
+
+/* Cuerpo scrolleable si no cabe */
+.sun-editor .se-dialog .se-dialog-content .se-dialog-body {
+    max-height: calc(80vh - 96px);
+    overflow: auto;
+}
+
+/* Inputs más pequeños */
+.sun-editor .se-input-form input[type="text"],
+.sun-editor .se-input-form input[type="number"],
+.sun-editor .se-input-size {
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    padding: 0 10px;
+}
+.sun-editor .se-dialog .se-size-control input[type="text"],
+.sun-editor .se-dialog .se-size-control input[type="number"] {
+    width: 72px;
+}
+
+/* Header / Tabs (estético) */
+.sun-editor .se-dialog .se-dialog-header {
+    border: 0;
+    padding: 0 0 10px;
+    font-weight: 600;
+    color: #111827;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.sun-editor .se-dialog .se-modal-title::after {
+    content: "Imagen";
+} /* título fijo */
+.sun-editor .se-dialog .se-dialog-tabs {
+    margin: 6px 0 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.sun-editor .se-dialog .se-dialog-tabs button {
+    border: 0;
+    background: transparent;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: #6b7280;
+}
+.sun-editor .se-dialog .se-dialog-tabs button.active {
+    color: #111827;
+    border-bottom: 2px solid #0d6efd;
+}
+/* Oculta la pestaña Enlace */
+.sun-editor .se-dialog .se-dialog-tabs button[data-tab-link="url"] {
+    display: none !important;
+}
+
+/* Inputs */
+.sun-editor .se-input-form .se-input-label {
+    display: block;
+    margin: 6px 0;
+    font-size: 0.86rem;
+    color: #374151;
+    font-weight: 600;
+}
+.sun-editor .se-input-form input[type="text"],
+.sun-editor .se-input-form input[type="number"] {
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    padding: 0 12px;
+    background: #fff;
+    width: 100%;
+}
+.sun-editor .se-input-form input:focus {
+    outline: none;
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.12);
+}
+
+/* Caja del input file (dropzone simple) */
+.sun-editor .se-dialog .se-dialog-form-files {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: #f8fafc;
+}
+/* Retira línea punteada que mete SunEditor entre bloques */
+.sun-editor .se-dialog .se-dialog-body > div[style*="border-bottom"] {
+    border: 0 !important;
+}
+
+/* Tamaños y proporción */
+.sun-editor .se-dialog .se-dialog-size-text {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.sun-editor .se-dialog .se-input-control {
+    width: 90px;
+}
+.sun-editor .se-dialog input[type="checkbox"] {
+    accent-color: #0d6efd;
+}
+/* Oculta revert/rotate */
+.sun-editor .se-dialog .se-dialog-btn-revert {
+    display: none !important;
+}
+
+/* Oculta campos que no usas + radios de alineación */
+.sun-editor .se-dialog .se-input-url,
+.sun-editor .se-dialog ._se_image_url,
+.sun-editor .se-dialog ._se_image_alt,
+.sun-editor .se-dialog .se-input-caption,
+.sun-editor .se-dialog .se-image-alt,
+.sun-editor .se-dialog .se-input-title,
+.sun-editor .se-dialog .se-help-text,
+.sun-editor .se-dialog ._se_image_check_caption,
+.sun-editor .se-dialog .se-dialog-btn-radio,
+.sun-editor .se-dialog .se-dialog-tabs,
+.sun-editor
+    ._se_tab_content_image
+    .se-dialog-body
+    .se-dialog-form:has(.se-input-url),
+.sun-editor ._se_tab_content_image .se-dialog-body .se-link-preview {
+    display: none !important;
+}
+
+/* Fallback sin :has(): oculta el 2º .se-dialog-form dentro del bloque punteado */
+.sun-editor
+    ._se_tab_content_image
+    .se-dialog-body
+    > div[style*="border-bottom"]
+    > .se-dialog-form:nth-of-type(2) {
+    display: none !important;
+}
+/* Footer y botón */
+.sun-editor .se-dialog .se-dialog-footer {
+    padding-top: 10px;
+    border: 0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.sun-editor .se-dialog .se-btn-primary {
+    background: #0d6efd;
+    color: #fff;
+    border: 0;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+/* Texto del botón: Insertar */
+.sun-editor .se-dialog .se-btn-primary span {
+    visibility: hidden;
+}
+.sun-editor .se-dialog .se-btn-primary span::after {
+    visibility: visible;
+    content: "Insertar";
+}
+.sun-editor .se-dialog .se-btn-default {
+    background: #f3f4f6;
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 14px;
+    color: #111827;
+}
+
+.sun-editor .se-notice {
+    display: none !important;
+}

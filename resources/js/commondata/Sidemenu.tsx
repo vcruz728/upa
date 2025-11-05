@@ -1,7 +1,7 @@
 export const MENUITEMS = [
     {
         menutitle: "Oficios",
-        rol: [1, 2, 3, 4, 5],
+        rol: [1, 2, 3, 4, 5, 6],
         Items: [
             {
                 path: "/oficios/listado-oficio",
@@ -9,7 +9,16 @@ export const MENUITEMS = [
                 type: "link",
                 active: false,
                 selected: false,
-                title: "Recepción",
+                title: "Listado",
+                rol: [1, 2],
+            },
+            {
+                path: "/oficios/recepcion-oficio",
+                icon: "fa fa-plus-circle",
+                type: "link",
+                active: false,
+                selected: false,
+                title: "Nuevo Oficio",
                 rol: [1, 2],
             },
             {
@@ -19,7 +28,7 @@ export const MENUITEMS = [
                 active: false,
                 selected: false,
                 title: "Mis oficios",
-                rol: [1, 3, 4],
+                rol: [1, 3, 4, 6],
             },
             {
                 path: "/oficios/respuestas",
@@ -37,7 +46,7 @@ export const MENUITEMS = [
                 active: false,
                 selected: false,
                 title: "Nuevo oficio",
-                rol: [1, 2, 3, 4, 5],
+                rol: [1, 3, 4, 5],
             },
         ],
     },

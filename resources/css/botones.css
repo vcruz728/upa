@@ -1,0 +1,332 @@
+/* ===== UTILIDADES BÁSICAS ===== */
+.text-wrap {
+    white-space: normal !important;
+}
+.text-nowrap {
+    white-space: nowrap !important;
+}
+
+/* Botones de acción */
+.btn-icon {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-icon i {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.btns-acciones {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+.btns-acciones :is(a, button) {
+    margin: 0 !important;
+}
+
+.dt-acciones {
+    min-width: 11rem;
+}
+
+/* ====== HEADERS: sin mayúsculas, sin cortes raros ====== */
+#activos-table,
+thead th,
+#historico-table thead th,
+#vd-table thead th,
+#vd-historico-table thead th,
+#informativos-table thead th {
+    text-transform: none !important; /* adiós MAYÚSCULAS impuestas por el theme */
+    letter-spacing: normal !important;
+    word-break: normal !important; /* evita break-all/break-word agresivo */
+    overflow-wrap: normal !important;
+    hyphens: manual;
+}
+
+/* En desktop, encabezados en una sola línea; en móvil, que envuelvan */
+@media (min-width: 992px) {
+    #activos-table thead th,
+    #historico-table thead th,
+    #vd-table thead th,
+    #vd-historico-table thead th,
+    #informativos-table thead th {
+        white-space: nowrap !important;
+    }
+}
+@media (max-width: 991.98px) {
+    #activos-table thead th,
+    #historico-table thead th,
+    #vd-table thead th,
+    #vd-historico-table thead th,
+    #informativos-table thead th {
+        white-space: normal !important;
+    }
+}
+
+/* ====== CELDAS: envoltura sensata ====== */
+/* por defecto permite envolver; usa 'text-nowrap' solo donde quieras 1 línea */
+#activos-table tbody td,
+#historico-table tbody td,
+#vd-table tbody td,
+#vd-historico-table tbody td,
+#informativos-table tbody td {
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: anywhere; /* corta SOLO palabras larguísimas (folios, urls) */
+}
+
+/* Descripción más cómoda de leer */
+.texto-justificable {
+    white-space: normal;
+    line-height: 1.35;
+}
+
+/* (opcional) si algún CSS de tu theme mete zebra, lo neutralizamos */
+table.dataTable.display tbody tr.odd,
+table.dataTable.display tbody tr.even {
+    background: transparent !important;
+}
+
+/* Centrado horizontal y vertical por defecto */
+table.dataTable td.dt-vmiddle,
+table.dataTable th.dt-vmiddle {
+    vertical-align: middle !important; /* centrado vertical */
+}
+table.dataTable td.text-center,
+table.dataTable th.text-center {
+    text-align: center !important; /* centrado horizontal */
+}
+
+/* Columna “Breve descripción” justificada */
+#activos-table td.col-descripcion,
+#historico-table td.col-descripcion,
+#informativos-table td.col-descripcion {
+    text-align: justify !important;
+    white-space: normal !important; /* permite múltiples líneas */
+    word-break: normal;
+    overflow-wrap: anywhere; /* corta tokens largos si hace falta */
+    hyphens: auto;
+}
+
+/* Si usas el wrapper en el render, refuérzalo */
+.texto-justificable {
+    text-align: justify;
+    white-space: normal;
+    line-height: 1.35;
+}
+
+/* Acciones: en md/down apila verticalmente y reduce ancho mínimo */
+@media (max-width: 1199.98px) {
+    /* < 1200px = md/lg-chico */
+    .btns-acciones {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .btns-acciones .btn-icon {
+        width: 34px;
+        height: 34px;
+    }
+    .dt-acciones {
+        min-width: 3.5rem;
+    } /* antes 11rem; ahora muy angosta */
+}
+
+/* Columnas más compactas en md (pero legibles) */
+/* ===== Vista compacta a partir de 1600px hacia abajo ===== */
+@media (max-width: 1600px) {
+    /* Acciones apiladas */
+    .btns-acciones {
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .btns-acciones .btn-icon {
+        width: 34px;
+        height: 34px;
+    }
+    .dt-acciones {
+        min-width: 3.5rem;
+    }
+
+    /* No. Oficio/Folio más compacto (una línea, ellipse) */
+    #activos-table td.col-num-oficio,
+    #historico-table td.col-num-oficio,
+    #vd-table td.col-num-oficio,
+    #vd-historico-table td.col-num-oficio {
+        max-width: 12ch;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Dependencia/UA: permite wrap pero con tope de ancho cómodo */
+    #activos-table td.col-dependencia,
+    #historico-table td.col-dependencia {
+        max-width: 28ch;
+        white-space: normal;
+    }
+}
+
+/* ===== Desktop ≥1600px ===== */
+th.col-estatus,
+td.col-estatus {
+    width: 56px;
+}
+th.col-fecha,
+td.col-fecha {
+    width: 190px;
+}
+th.col-num-oficio,
+td.col-num-oficio {
+    width: 140px;
+} /* usa text-nowrap si no quieres cortes */
+th.col-dependencia,
+td.col-dependencia {
+    width: 220px;
+}
+th.col-proceso,
+td.col-proceso {
+    width: 210px;
+}
+th.col-descripcion,
+td.col-descripcion {
+    min-width: 320px;
+    width: 30%;
+} /* que esta crezca */
+th.col-responsable,
+td.col-responsable {
+    width: 190px;
+}
+th.col-folio,
+td.col-folio {
+    width: 120px;
+}
+th.col-destinatario,
+td.col-destinatario {
+    width: 210px;
+}
+th.col-acciones,
+td.col-acciones {
+    width: 220px;
+}
+
+/* ===== 1200–1599px (compacta) ===== */
+@media (max-width: 1599.98px) {
+    th.col-fecha,
+    td.col-fecha {
+        width: 160px;
+    }
+    th.col-num-oficio,
+    td.col-num-oficio {
+        width: 110px;
+    }
+    th.col-dependencia,
+    td.col-dependencia {
+        width: 180px;
+    }
+    th.col-proceso,
+    td.col-proceso {
+        width: 170px;
+    }
+    th.col-responsable,
+    td.col-responsable {
+        width: 170px;
+    }
+    th.col-folio,
+    td.col-folio {
+        width: 110px;
+    }
+    th.col-destinatario,
+    td.col-destinatario {
+        width: 170px;
+    }
+    th.col-acciones,
+    td.col-acciones {
+        width: 180px;
+    }
+    th.col-descripcion,
+    td.col-descripcion {
+        min-width: 260px;
+    }
+}
+
+/* ===== <1200px: deja que Responsive oculte; no fuerces anchos ===== */
+@media (max-width: 1199.98px) {
+    #activos-table th,
+    #activos-table td,
+    #historico-table th,
+    #historico-table td,
+    #vd-table th,
+    #vd-table td,
+    #vd-historico-table th,
+    #vd-historico-table td {
+        width: auto !important;
+    }
+}
+
+/* Ajustes de envoltura recomendados */
+.no-break-words {
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+}
+.hyphenate {
+    hyphens: auto;
+}
+
+/* ===== Scope de Mis oficios ===== */
+.mis-oficios-scope {
+    /* Bloquea los colores “default” que quieres para SIEMPRE */
+    --bs-table-bg: #fff;
+    --bs-table-striped-bg: rgba(0, 0, 0, 0.02);
+    --bs-table-striped-color: inherit;
+    --bs-table-hover-bg: rgba(0, 0, 0, 0.04);
+    --bs-table-hover-color: inherit;
+}
+
+/* Asegura que se usen tus variables aunque otro CSS traiga !important */
+.mis-oficios-scope .table {
+    background-color: var(--bs-table-bg);
+}
+.mis-oficios-scope .table-striped tbody tr:nth-of-type(odd) > * {
+    background-color: var(--bs-table-striped-bg) !important;
+}
+.mis-oficios-scope .table-hover tbody tr:hover > * {
+    background-color: var(--bs-table-hover-bg) !important;
+}
+
+/* Mantén intacto el color del semáforo (1a columna) */
+.mis-oficios-scope .table-hover tbody tr:hover td.col-semaforo,
+.mis-oficios-scope .table-striped tbody tr:nth-of-type(odd) td.col-semaforo,
+.mis-oficios-scope table.dataTable tbody tr.selected td.col-semaforo,
+.mis-oficios-scope table.dataTable tbody tr.table-active td.col-semaforo {
+    background-color: transparent !important;
+}
+
+/* (opcional) Si ves que algún CSS pinta el hover con más fuerza,
+   sube un nivel la especificidad apuntando al DataTable-BS5 */
+.mis-oficios-scope table.dataTable.table-hover > tbody > tr:hover > td {
+    background-color: var(--bs-table-hover-bg) !important;
+}
+
+/* Alineación de los controles de DataTables (Mostrar/Estatus y Buscar) */
+.listado-oficios-scope .dataTables_length label,
+.listado-oficios-scope .dataTables_filter label {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.listado-oficios-scope .dt-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* separa "Mostrar" del label Estatus */
+}

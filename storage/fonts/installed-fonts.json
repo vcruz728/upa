@@ -1,6 +1,8 @@
 {
     "sourcesanspro": {
-        "normal": "C:\\xampp82\\htdocs\\administrativo\\storage\\fonts\/sourcesanspro_normal_03473595c91c82526a175826fb4a3739",
-        "bold": "sourcesanspro_bold_8b5d0595c40c3091203dda6776ff14fb"
+        "normal": "C:\\xampp81\\htdocs\\upa\\storage\\fonts\/\/sourcesanspro_normal_183158cf663f2218276f5be7cbc38144",
+        "bold": "C:\\xampp81\\htdocs\\upa\\storage\\fonts\/\/sourcesanspro_bold_1239ed0c3b64a5c27884701298b0bd03",
+        "italic": "C:\\xampp81\\htdocs\\upa\\storage\\fonts\/\/sourcesanspro_italic_c49dac5032e2fa40590fc31c1a60ef3d",
+        "bold_italic": "sourcesanspro_bold_italic_a219ff92355c48457acb0331cf45e513"
     }
 }

@@ -109,10 +109,7 @@ export const Sidebar = () => {
                 onMouseOut={() => Outhover()}
             >
                 <div className="side-header">
-                    <Link
-                        className="header-brand1"
-                        href={getFullUrl("/dashboard")}
-                    >
+                    <Link className="header-brand1" href={route("dashboard")}>
                         <img
                             src={Imagesdata("buapBlanco")}
                             className="header-brand-img desktop-logo"

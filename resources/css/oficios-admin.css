@@ -1,0 +1,155 @@
+/* ====== Scope para no fugar estilos ====== */
+.oficios-scope {
+    --mo-hover: rgba(0, 0, 0, 0.04);
+    --mo-striped: rgba(0, 0, 0, 0.02);
+}
+
+/* Hover/Zebra suaves y que NO tapen el semáforo (primera col con dtr-control) */
+.oficios-scope .table-hover tbody tr:hover > * {
+    background-color: var(--mo-hover) !important;
+}
+.oficios-scope .table-striped tbody tr:nth-of-type(odd) > * {
+    background-color: var(--mo-striped) !important;
+}
+.oficios-scope .table-hover tbody tr:hover > td.dtr-control,
+.oficios-scope .table-striped tbody tr:nth-of-type(odd) > td.dtr-control {
+    /* conserva el color de fondo que pintas en createdCell */
+    background-color: inherit !important;
+}
+
+/* Forzar ancho/alto de la col de “Estatus” (donde usas dtr-control) */
+.oficios-scope td.dtr-control {
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    height: 32px;
+    cursor: pointer;
+    position: relative;
+    padding-left: 0 !important; /* no margen extra */
+    border: 1px solid #eee;
+}
+
+/* ====== Detalle Responsive bonito ====== */
+.oficios-scope .mo-child {
+    padding: 12px 10px;
+    background: #fff;
+}
+
+.oficios-scope .mo-row {
+    padding: 12px 6px;
+    border-top: 1px solid #eee;
+}
+
+.oficios-scope .mo-row:first-child {
+    border-top: 0;
+}
+
+.oficios-scope .mo-label {
+    display: block;
+    font-weight: 700;
+    color: #475569; /* slate-600 */
+    text-align: center; /* etiqueta centrada */
+    margin-bottom: 6px;
+}
+
+.oficios-scope .mo-value {
+    text-align: center; /* contenido centrado en mobile */
+    word-break: break-word;
+}
+
+/* Cuando envuelves tus textos en <div class="texto-justificable">… */
+.oficios-scope .mo-value .texto-justificable,
+.oficios-scope .texto-justificable {
+    text-align: justify;
+}
+
+/* Utilidades opcionales para cortar/guionar textos largos */
+.oficios-scope .no-break-words {
+    overflow-wrap: anywhere;
+}
+.oficios-scope .hyphenate {
+    hyphens: auto;
+}
+
+/* ====== Caret custom del Responsive ======
+   Oculta el pseudo-caret por defecto y usa uno centrado (sólo en modo colapsado) */
+.oficios-scope table.dataTable > tbody > tr > td.dtr-control::before {
+    content: "" !important;
+    display: none !important;
+}
+
+/* Por defecto, nada */
+.oficios-scope td.dtr-control::after {
+    content: "";
+    display: none;
+}
+
+/* Mostrar triangulito SOLO cuando la tabla está colapsada */
+.oficios-scope
+    table.dataTable.dtr-inline.collapsed
+    > tbody
+    > tr
+    > td.dtr-control::after {
+    content: "▸"; /* cerrado */
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    line-height: 1;
+    color: rgba(0, 0, 0, 0.75);
+    pointer-events: none; /* no bloquea el click */
+}
+
+/* Cambiar a triangulito hacia abajo cuando está abierto */
+.oficios-scope
+    table.dataTable.dtr-inline.collapsed
+    > tbody
+    > tr.parent
+    > td.dtr-control::after,
+.oficios-scope
+    table.dataTable.dtr-inline.collapsed
+    > tbody
+    > tr.shown
+    > td.dtr-control::after,
+.oficios-scope
+    table.dataTable.dtr-inline.collapsed
+    > tbody
+    > tr.dt-hasChild
+    > td.dtr-control::after,
+.oficios-scope
+    table.dataTable.dtr-inline.collapsed
+    > tbody
+    > tr.dt-has-details
+    > td.dtr-control::after {
+    content: "▾";
+    color: rgba(0, 0, 0, 0.9);
+}
+
+/* ====== Alineaciones útiles ====== */
+.oficios-scope .dt-vmiddle {
+    vertical-align: middle !important;
+}
+.oficios-scope .dt-acciones .btn {
+    margin: 0 2px;
+}
+
+/* Evita que el cambio de tamaño del caret mueva la tabla en desktop */
+@media (min-width: 1200px) {
+    .oficios-scope table.dataTable > tbody > tr > td.dtr-control::after {
+        display: none;
+    }
+}
+
+/* Opcional: si defines columnas “estrechas” tipo folio/estatus */
+.oficios-scope th,
+.oficios-scope td {
+    white-space: normal;
+}
+.oficios-scope .text-nowrap {
+    white-space: nowrap !important;
+}
+.oficios-scope .text-wrap {
+    white-space: normal !important;
+}

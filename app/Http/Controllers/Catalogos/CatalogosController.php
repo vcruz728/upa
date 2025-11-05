@@ -6,67 +6,86 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Catalogos\DestinatarioExterno;
+use Illuminate\Validation\Rule;
 
 class CatalogosController extends Controller
 {
     public function indexExternos()
-    {   
-        $destinatarios = DestinatarioExterno::where('id_area', \Auth::user()->id_area)->withTrashed()->get();
+    {
+        $destinatarios = DestinatarioExterno::forCurrentArea()
+            ->withTrashed()
+            ->orderBy('nombre')
+            ->get();
 
         return Inertia::render('Catalogos/DestinatariosExternos', [
-            'destinatarios' => $destinatarios
+            'destinatarios' => $destinatarios,
         ]);
     }
 
     public function saveDestinatario(Request $request)
     {
+        $areaId = auth()->user()->id_area;
+
         $request->validate([
-            'nombre' => 'required|string|min:2|max:255',
-            'cargo' => 'required|string|min:2|max:255',
-            'dependencia' => 'required|string|min:2|max:255',
-            'email' => 'required|email|min:2|max:255',
+            'id'          => ['nullable', 'integer'],
+            'nombre'      => ['required', 'string', 'min:2', 'max:255'],
+            'cargo'       => ['nullable', 'string', 'max:255'],
+            'dependencia' => ['nullable', 'string', 'max:255'],
+            // ✅ email único por área (ignora el propio id en actualización)
+            'email'       => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('cat_destinatarios_externos', 'email')
+                    ->where(fn($q) => $q->where('id_area', $areaId))
+                    ->ignore($request->id),
+            ],
         ]);
 
-        if($request->id == 0){
+        if ((int)($request->id ?? 0) === 0) {
             $destinatario = new DestinatarioExterno();
+            // Si no usas el booted(), asegúrate de setearlo aquí:
+            $destinatario->id_area = $areaId;
         } else {
-            $destinatario = DestinatarioExterno::find($request->id);
+            // ✅ Asegura que el registro pertenezca al área del usuario
+            $destinatario = DestinatarioExterno::forCurrentArea($areaId)
+                ->withTrashed() // por si editas uno soft-deleted
+                ->findOrFail($request->id);
         }
 
-
-        $destinatario->id_area = \Auth::user()->id_area;
-        $destinatario->nombre = $request->nombre;
-        $destinatario->cargo = $request->cargo;
+        $destinatario->nombre      = $request->nombre;
+        $destinatario->cargo       = $request->cargo;
         $destinatario->dependencia = $request->dependencia;
-        $destinatario->email = $request->email;
-
+        $destinatario->email       = $request->email;
         $destinatario->save();
 
-        return redirect()->route('catalogos.destinatariosExternos')->with('success', 'Destinatario externo guardado exitosamente.');
+        return redirect()
+            ->route('catalogos.destinatariosExternos')
+            ->with('success', 'Destinatario externo guardado exitosamente.');
     }
 
     public function deleteDestinatario($id)
     {
-        $destinatario = DestinatarioExterno::find($id);
-        
-        if ($destinatario) {
-            $destinatario->delete();
-            return redirect()->route('catalogos.destinatariosExternos')->with('success', 'Destinatario externo eliminado exitosamente.');
-        }
+        // ✅ Solo elimina si es de mi área
+        $destinatario = DestinatarioExterno::forCurrentArea()->findOrFail($id);
+        $destinatario->delete();
 
-        return redirect()->route('catalogos.destinatariosExternos')->with('error', 'Destinatario externo no encontrado.');
+        return redirect()
+            ->route('catalogos.destinatariosExternos')
+            ->with('success', 'Destinatario externo eliminado exitosamente.');
     }
-    
+
     public function reactivateDestinatario($id)
     {
-        $destinatario = DestinatarioExterno::withTrashed()->find($id);
-        
-        if ($destinatario) {
-            $destinatario->restore();
-            return redirect()->route('catalogos.destinatariosExternos')->with('success', 'Destinatario externo reactivado exitosamente.');
-        }
+        // ✅ Solo restaura si es de mi área
+        $destinatario = DestinatarioExterno::withTrashed()
+            ->forCurrentArea()
+            ->findOrFail($id);
 
-        return redirect()->route('catalogos.destinatariosExternos')->with('error', 'Destinatario externo no encontrado.');
+        $destinatario->restore();
+
+        return redirect()
+            ->route('catalogos.destinatariosExternos')
+            ->with('success', 'Destinatario externo reactivado exitosamente.');
     }
-}   
-         
+}

@@ -4825,6 +4825,13 @@ button {
 button:focus {
     outline: 0;
 }
+.dt-buttons {
+    display: none !important;
+}
+
+.sun-editor-editable, .sun-editor-editable * {
+    font-family: 'SourceSansPro', Arial, sans-serif !important;
+}
 
 input,
 button,
@@ -68629,3 +68636,32 @@ a.fc-event:hover {
     padding: 0;
 }
 /*# sourceMappingURL=style.css.map */
+
+/* No cortar dentro de palabras; solo en espacios */
+.no-break-words{
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important; /* evita romper palabras */
+}
+
+/* Silabeo bonito cuando sí sea necesario (requiere lang=es en el contenedor) */
+.hyphenate{
+  hyphens: auto;
+}
+
+/* Útil para tus columnas con texto largo */
+.col-dependencia,
+.col-descripcion{
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  hyphens: auto;
+}
+
+/* (Opcional) Anula .text-break de Bootstrap SOLO dentro de tus tablas */
+#activos-table .text-break,
+#historico-table .text-break,
+#vd-table .text-break,
+#vd-historico-table .text-break{
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+}

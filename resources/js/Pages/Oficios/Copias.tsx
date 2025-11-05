@@ -1,5 +1,5 @@
 import { useForm, router } from "@inertiajs/react";
-import { FormEventHandler, useRef, useState } from "react";
+import { FormEventHandler, useEffect, useRef, useState } from "react";
 import { Button, Card, Col, Form, Row } from "react-bootstrap";
 import Select, { SelectInstance } from "react-select";
 import InputError from "../InputError";
@@ -10,7 +10,6 @@ import DataTable from "datatables.net-react";
 import DT from "datatables.net-bs5";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
-import { getFullUrl } from "../../types/url";
 import TituloCard from "@/types/TituloCard";
 
 DataTable.use(DT);
@@ -32,6 +31,11 @@ const Copias = ({
     const [variables, setVariables] = useState({
         destinatario: 0,
     });
+
+    useEffect(() => {
+        setData("id", id);
+    }, [id]);
+
     const [copiaA, setCopiaA] = useState<any>([]);
     const { data, setData, errors, post, progress, reset, setDefaults } =
         useForm({
@@ -84,7 +88,7 @@ const Copias = ({
             },
         }).then((result) => {
             if (result.isConfirmed) {
-                router.delete(getFullUrl(`/oficios/copia/${id}`), {
+                router.delete(route("deleteCopiasOficio", { id }), {
                     preserveScroll: true,
                     onSuccess: (page) => {
                         toast("Correcto: Se elimino la copia del oficio.", {

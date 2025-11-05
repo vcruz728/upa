@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Providers\RouteServiceProvider;
@@ -28,13 +29,23 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+
+    public function store(LoginRequest $request): \Illuminate\Http\RedirectResponse
     {
         $request->authenticate();
-
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::HOME);
+        $rol = (int) \Illuminate\Support\Facades\Auth::user()->rol;
+
+        $destino = match ($rol) {
+            1, 3, 4, 6 => route('misOficios'),
+            2          => route('listadoOficio'),
+            5          => route('oficiosRespuestas'),
+            default    => route('dashboard'),
+        };
+
+        $request->session()->forget('url.intended');
+        return redirect()->to($destino);
     }
 
     /**

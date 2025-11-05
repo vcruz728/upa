@@ -1,0 +1,7 @@
+services:
+  app:
+    volumes:
+      - ./docker/php/opcache.dev.ini:/usr/local/etc/php/conf.d/opcache.ini:ro
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"

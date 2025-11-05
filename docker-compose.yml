@@ -1,0 +1,47 @@
+services:
+    app:
+        build: .
+        container_name: laravel-app
+        environment:
+            APP_ENV: local
+            APP_DEBUG: "true"
+            APP_URL: http://localhost
+            ASSET_URL: http://localhost
+            DB_CONNECTION: sqlsrv
+            DB_HOST: host.docker.internal # tu SQL Server en Windows host
+            DB_PORT: 1433
+            DB_DATABASE: administrativo
+            DB_USERNAME: sa
+            DB_PASSWORD: "Josadate1996"
+            DB_ENCRYPT: "yes"
+            DB_TRUST_SERVER_CERTIFICATE: "true"
+        volumes:
+            # ✅ monta desde WSL (rápido)
+            - /home/vcruz728/vd:/var/www/html
+            # (opcional) tu opcache.dev.ini si lo estás usando
+            # - ./docker/php/opcache.dev.ini:/usr/local/etc/php/conf.d/opcache.ini:ro
+        depends_on:
+            - redis
+        extra_hosts:
+            - "host.docker.internal:host-gateway"
+
+    caddy:
+        image: caddy:2
+        container_name: caddy
+        ports:
+            - "80:80"
+        volumes:
+            - ./Caddyfile:/etc/caddy/Caddyfile:ro
+        depends_on:
+            - app
+
+    redis:
+        image: redis:7
+        container_name: redis
+        ports:
+            - "6379:6379"
+        volumes:
+            - redis-data:/data
+
+volumes:
+    redis-data:

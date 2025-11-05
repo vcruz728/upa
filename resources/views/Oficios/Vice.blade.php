@@ -5,17 +5,16 @@
     <meta charset="utf-8">
     <title>Oficio PDF</title>
     <style>
+        /* Margenes de página para header/footer fijos */
         @page {
             size: letter;
             margin-top: 4.5cm;
             margin-left: 4.5cm;
             margin-right: 2.5cm;
             margin-bottom: 2.5cm;
-
-
-
         }
 
+        /* Fuentes */
         @font-face {
             font-family: 'SourceSansPro';
             src: url('{{ public_path('fonts/SourceSansPro-Regular.ttf') }}') format('truetype');
@@ -44,8 +43,6 @@
             font-style: italic;
         }
 
-
-
         @font-face {
             font-family: 'SourceSansPro';
             src: url('{{ public_path('fonts/SourceSansPro-BoldItalic.ttf') }}') format('truetype');
@@ -60,14 +57,13 @@
             font-style: italic;
         }
 
-
         body {
             font-family: 'SourceSansPro', arial !important;
             font-size: 9pt !important;
             position: relative;
-
         }
 
+        /* Header fijo (ajusta el top si cambias margin-top de @page) */
         header {
             position: fixed;
             top: -145px;
@@ -77,6 +73,7 @@
             text-align: center;
         }
 
+        /* Footer fijo (ajusta el bottom si cambias margin-bottom de @page) */
         footer {
             position: fixed;
             bottom: -125px;
@@ -87,6 +84,7 @@
             font-size: 12px;
         }
 
+        /* Marca de agua */
         .background {
             position: fixed;
             right: -343px;
@@ -107,41 +105,49 @@
         p {
             margin: 0 !important;
             padding: 0 !important;
-
             font-size: 9pt !important;
         }
 
+        /* ------------------------------------------------------------------
+           IMPORTANTÍSIMO:
+           NO apliques estilos globales a todas las tablas (rompe el footer).
+           Limítalos al contenido dinámico del editor y a .tabla si la usas.
+           ------------------------------------------------------------------ */
 
-        /* Tablas limpias y estables */
-        table {
+        /* Tablas del contenido dinámico (SunEditor) */
+        .contenido-dinamico table,
+        .tabla {
             width: 100%;
             max-width: 100%;
             margin: 0;
             line-height: 1;
             border-collapse: collapse;
             table-layout: fixed;
-            /* columnas estables y sin “bailes” */
+            /* columnas estables */
             border: 1px solid #000;
         }
 
-        thead {
+        .contenido-dinamico thead,
+        .tabla thead {
             display: table-header-group;
             text-align: center;
             vertical-align: middle;
         }
 
-        tfoot {
+        .contenido-dinamico tfoot,
+        .tabla tfoot {
             display: table-footer-group;
         }
 
-        tr {
+        .contenido-dinamico tr,
+        .tabla tr {
             page-break-inside: avoid;
         }
 
-
-        /* Celdas */
-        th,
-        td {
+        .contenido-dinamico th,
+        .contenido-dinamico td,
+        .tabla th,
+        .tabla td {
             box-sizing: border-box;
             word-break: break-word;
             text-align: center;
@@ -152,23 +158,22 @@
             white-space: normal;
             hyphens: none;
             min-width: 0;
-
         }
 
-        /* Encabezado visual */
-        thead th {
+        .contenido-dinamico thead th,
+        .tabla thead th {
             background: #f3f4f6;
             font-weight: 600;
         }
 
-        /* Si tienes columnas con mucho texto que quieras justificar */
         .cell-justify {
             text-align: justify;
         }
 
-        /* Consejos para PDF (Dompdf): paddings moderados y evitar partir tablas */
         @media print {
-            table {
+
+            .contenido-dinamico table,
+            .tabla {
                 page-break-inside: avoid;
                 border: 1px solid #000;
             }
@@ -180,8 +185,7 @@
             text-indent: 0 !important;
         }
 
-
-        /* opcional, evita negativos de Word */
+        /* Sello/firma (opcional) */
         .sello-movil {
             position: absolute;
             top: 45px;
@@ -189,8 +193,6 @@
             width: 19%;
             z-index: 100000;
             pointer-events: none;
-            /* Opcional: para que no bloquee el texto */
-
         }
 
         .firma-movil {
@@ -200,37 +202,26 @@
             width: 30%;
             z-index: 100000;
             pointer-events: none;
-            /* Opcional: para que no bloquee el texto */
-
         }
 
-
         .dependencia {
-            line-height: 0.9 !important;
+            line-height: .9 !important;
             font-family: 'SourceSansPro';
             font-weight: bold;
             word-break: keep-all;
-            /* no partir palabras */
             hyphens: none;
-            /* sin guiones automáticos */
         }
 
         .generales {
             font-family: 'SourceSansPro';
-            font-style: normal;
             line-height: 1.15;
             font-size: 9pt !important;
-            margin: 0 !important;
-            padding: 0 !important;
         }
 
         .firma {
             font-family: 'SourceSansPro';
-            font-style: normal;
             line-height: 1 !important;
             font-size: 9pt !important;
-            margin: 0 !important;
-            padding: 0 !important;
         }
 
         .copias {
@@ -238,8 +229,6 @@
             font-style: italic;
             line-height: 1 !important;
             font-size: 7pt !important;
-            margin: 0 !important;
-            padding: 0 !important;
         }
 
         .contenido-dinamico {
@@ -263,17 +252,14 @@
             font-weight: bold;
         }
 
-        /* === Imágenes del contenido dinámico (PDF) === */
+        /* === Imágenes dentro del contenido dinámico === */
         .contenido-dinamico .se-component.se-image-container {
             display: block !important;
             margin: 8px 0 !important;
             float: none !important;
-
-            /* alineación por defecto */
             text-align: left !important;
         }
 
-        /* Respeta lo que puso SunEditor */
         .contenido-dinamico .se-component.se-image-container.__se__float-center {
             text-align: center !important;
         }
@@ -282,16 +268,13 @@
             text-align: right !important;
         }
 
-        /* El figure no debe romper la alineación del contenedor */
         .contenido-dinamico .se-component.se-image-container figure {
             display: inline-block !important;
-            /* para que text-align afecte */
             margin: 0 !important;
             float: none !important;
             width: auto !important;
         }
 
-        /* La imagen en línea para que se alinee con text-align */
         .contenido-dinamico .se-component.se-image-container img {
             display: inline-block !important;
             max-width: 100% !important;
@@ -299,7 +282,6 @@
             float: none !important;
         }
 
-        /* Si llega text-align en estilo inline del wrapper, respétalo también */
         .contenido-dinamico [style*="text-align:right"] img {
             display: inline-block !important;
         }
@@ -311,33 +293,75 @@
         .contenido-dinamico [style*="text-align:left"] img {
             display: inline-block !important;
         }
+
+        /* ------- Footer limpio (sin bordes de tabla), con "palito" ------- */
+        .footer-wrap {
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            color: rgb(136, 136, 136);
+            padding: 4px 0 !important;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-table {
+            margin: 0 auto;
+            width: auto;
+            border-collapse: collapse;
+        }
+
+        .footer-table td {
+            border: 0;
+        }
+
+
+
+        .footer-left {
+            text-align: right;
+            width: 100px;
+            padding-right: 7px;
+            vertical-align: top;
+            line-height: .95;
+        }
+
+        .footer-right {
+            border-left: 2pt solid #122348 !important;
+            /* fuerza el palito */
+            padding-left: 7px;
+            vertical-align: top;
+            line-height: .95;
+        }
     </style>
 </head>
 
 <body>
-    <img src="{{ public_path('img/minerva_gris.png') }}" class="background" />
-    <!--  descomentar cuando no haya hojas membretadas -->
+    {{-- Marca de agua --}}
+    @if (!empty($bgDataUri))
+        <img src="{{ $bgDataUri }}" class="background" />
+    @else
+        <img src="{{ 'file://' . str_replace('\\', '/', public_path('img/minerva_gris_670px_64c.png')) }}"
+            class="background" />
+    @endif
+
+    {{-- Header (logo) --}}
     <header>
-        <img src="{{ public_path('img/minver_buap_azul.png') }}" width="100">
-        <!-- descomentar cuando no haya hojas membretadas -->
+        @if (!empty($logoDataUri))
+            <img src="{{ $logoDataUri }}" width="100">
+        @else
+            <img src="{{ 'file://' . str_replace('\\', '/', public_path('img/minver_buap_azul_200px_16c.png')) }}"
+                width="100">
+        @endif
     </header>
+
+    {{-- Footer estilizado --}}
     <footer>
-        <div
-            style="width: 100%; text-align: center; font-size: 10px; color: rgb(136, 136, 136); padding: 4px 0 !important; background: rgba(255,255,255,0.8); display:none;">
-            <!-- display:none; quitar cuando no haya hojas membretadas -->
-            <table style="margin: 0 auto;  width: auto;">
+        <div class="footer-wrap">
+            <table class="footer-table">
                 <tr>
-                    <td
-                        style="text-align: right; width: 90px;  vertical-align: top; padding-right: 0 !important; border: none !important; line-height: 0.8 !important;">
+                    <td class="footer-left">
                         Universidad<br>para Adultos
                     </td>
-                    <td style=" vertical-align: middle; text-align: center; border: none !important;">
-                        <div
-                            style="display: inline-block; width: 1.5px; height: 45px; background: #adcbd3; margin: 0 auto;">
-                        </div>
-                    </td>
-                    <td
-                        style="text-align: left;  vertical-align: top; padding-left: 7px !important; border: none !important; line-height: 0.8 !important;">
+                    <td class="footer-right">
                         11 sur 4701. Col. Reforma Agua Azul<br>
                         C.P. 72430 Puebla, Pue.<br>
                         Teléfono: 229 5500, Ext. 1653 y 1602
@@ -346,27 +370,28 @@
             </table>
         </div>
     </footer>
+
     <div class="content">
         <div>
-            <p style="font-family: 'SourceSansPro'; font-style: italic; ">Oficio No.
-                {{ $oficio?->siglas }}/{{ $respuesta?->oficio_respuesta }}/{{ date('Y') }}</p>
+            <p style="font-family: 'SourceSansPro'; font-style: italic;">
+                Oficio No. {{ $oficio?->siglas }}/{{ $respuesta?->oficio_respuesta }}/{{ date('Y') }}
+            </p>
         </div>
+
         <br>
+
         <div style="max-width: 70%;">
             @switch($tipo_usuario)
                 @case(1)
                     @php
-                        // --- Normalización y helpers ---
-
                         function norm_txt($txt)
                         {
                             $t = strip_tags((string) $txt);
-                            $t = str_replace("\xC2\xA0", ' ', $t); // NBSP UTF-8
-                            $t = str_replace('&nbsp;', ' ', $t); // NBSP HTML
+                            $t = str_replace("\xC2\xA0", ' ', $t);
+                            $t = str_replace('&nbsp;', ' ', $t);
                             $t = preg_replace('/\s+/u', ' ', $t);
                             return trim($t);
                         }
-
                         function nb_pairs($t)
                         {
                             $t = preg_replace('/\bde\s+la\b/iu', 'de&nbsp;la', $t);
@@ -375,8 +400,6 @@
                             $t = preg_replace('/\bdel\b/iu', 'del', $t);
                             return $t;
                         }
-
-                        // Divide cargo en (base, preposición final si traía)
                         function cargo_split($c)
                         {
                             $t = norm_txt($c);
@@ -390,15 +413,11 @@
                             }
                             return [trim($t), ''];
                         }
-
-                        // ¿Dependencia trae líder (prep/artículo) al inicio?
                         function dep_tiene_lider($txt)
                         {
                             $t = mb_strtolower(norm_txt($txt), 'UTF-8');
                             return preg_match('/^(del|de\s+la|de\s+los|de\s+las|de\s+el|el|la|los|las)\b/u', $t) === 1;
                         }
-
-                        // Preposición sugerida por la dependencia (si trae); si no, por artículo; si no, "de la"
                         function prep_desde_dependencia($txt)
                         {
                             $t = mb_strtolower(norm_txt($txt), 'UTF-8');
@@ -420,8 +439,6 @@
                             }
                             return 'de la';
                         }
-
-                        // Núcleo de dependencia (sin prep/artículo iniciales)
                         function dep_nucleo($txt)
                         {
                             $t = norm_txt($txt);
@@ -429,47 +446,34 @@
                             $t = preg_replace('/^(?:el|la|los|las)\s+/iu', '', $t);
                             return trim($t);
                         }
-
-                        // Cargos que van en una sola línea con la dependencia
                         function es_cargo_corto($c)
                         {
                             $b = mb_strtolower(norm_txt($c), 'UTF-8');
                             return preg_match('/^director(a)?$/u', $b) === 1;
-                            // agrega si quieres: |abogado(a)?\s+general|jefe(a)?|coordinador(a)?
                         }
 
-                        // === Datos normalizados ===
                         $nombre = norm_txt($respuesta->nombre ?? '');
                         $cargo_raw = norm_txt($respuesta->cargo ?? '');
                         $dependencia = norm_txt($respuesta->dependencia ?? '');
                         $BUAP = 'Benemérita Universidad Autónoma de Puebla';
 
-                        // Cargo -> (base, prep del cargo si venía)
                         [$cargoBase, $prepCargo] = cargo_split($cargo_raw);
-
-                        // Prep a usar según dependencia; si no tiene líder, usamos la del cargo; si no, "de la"
                         $depTiene = dep_tiene_lider($dependencia);
                         $prepDep = $depTiene ? prep_desde_dependencia($dependencia) : ($prepCargo ?: 'de la');
-
-                        // Núcleo puro de dependencia
                         $nucleo = dep_nucleo($dependencia);
                     @endphp
 
-                    {{-- L1: Nombre --}}
                     @if ($nombre !== '')
                         <p class="dependencia">{{ $nombre }}</p>
                     @endif
 
-                    {{-- Rector/Rectora: una sola línea con BUAP --}}
                     @if (preg_match('/^rector(a)?$/iu', $cargoBase))
                         <p class="dependencia">{!! nb_pairs($cargoBase . ' de la ' . $BUAP) !!}</p>
                     @else
                         @if ($cargoBase !== '' && $dependencia !== '' && es_cargo_corto($cargoBase))
-                            {{-- CARGO CORTO: una sola línea con dependencia y "de la" final (antes de BUAP) --}}
                             <p class="dependencia">{!! nb_pairs($cargoBase . ' ' . $prepDep . ' ' . $nucleo . ' de la') !!}</p>
                             <p class="dependencia">{!! nb_pairs($BUAP) !!}</p>
                         @else
-                            {{-- CASO GENERAL: cargo en una línea, dependencia en otra, luego BUAP --}}
                             @if ($cargoBase !== '')
                                 <p class="dependencia">{!! nb_pairs($cargoBase . ($dependencia !== '' ? ' ' . $prepDep : ' de la')) !!}</p>
                             @endif
@@ -483,55 +487,43 @@
 
                 @case(2)
                     <p class="dependencia">{{ $respuesta?->nombre }}</p>
-                    <p class="dependencia">{{ $respuesta?->cargo }} </p>
+                    <p class="dependencia">{{ $respuesta?->cargo }}</p>
                     <p class="dependencia">{{ $respuesta?->dependencia }}</p>
                 @break
 
             @endswitch
 
-
-
-            <p class="generales" style="font-weight: bold; line-height: 1 !important;">PRESENTE</p>
-
+            <p class="generales" style="font-weight:bold; line-height:1 !important;">PRESENTE</p>
         </div>
-        <br><br>
-        <!--  contenido -->
-        <div class="contenido-dinamico">
 
+        <br><br>
+
+        <!-- Contenido -->
+        <div class="contenido-dinamico">
             {!! $contenidoPdf ?? ($respuesta?->respuesta ?? '') !!}
         </div>
-        <!--  termina contenido -->
-        <br>
-
-
-        <p class="generales" style="font-style: italic; line-height: 1;">De antemano agradezco su atención y le reitero
-            la seguridad de mi más distinguida consideración.</p>
-
 
         <br>
-        <br>
+
+        <p class="generales" style="font-style: italic; line-height: 1;">
+            De antemano agradezco su atención y le reitero la seguridad de mi más distinguida consideración.
+        </p>
+
+        <br><br>
+
         <div style="position: relative; page-break-inside: avoid;">
             <p class="firma">Atentamente</p>
             <p class="firma">“Pensar bien, para vivir mejor”</p>
-            <p class="firma">H. Puebla de Zaragoza a {{ $fechaEscrita }}
-            </p>
+            <p class="firma">H. Puebla de Zaragoza a {{ $fechaEscrita }}</p>
 
-            <br>
-            <br>
-            <br>
-            <br>
+            <br><br><br><br>
 
-
-
-            <p style="font-family: 'SourceSansPro';">Mtro. Ricardo Valderrama Valdez</p>
-            <p style="font-family: 'SourceSansPro';">Director</p>
-            <!-- Descomentart si ya quieren sello y firma
-            <img src="{{ public_path('img/sello.png') }}" class="sello-movil" />
-            <img src="{{ public_path('img/firma.png') }}" class="firma-movil" />
-            -->
+            <p class="firma">Mtro. Ricardo Valderrama Valdez</p>
+            <p class="firma">Director de la Universidad para Adultos</p>
+            <!-- Descomentart si ya quieren sello y firma --->
+            {{--             <img src="{{ public_path('img/sello.png') }}" class="sello-movil" />
+            <img src="{{ public_path('img/firma.png') }}" class="firma-movil" /> --}}
         </div>
-
-
 
         <div style="margin-top: 20px;">
             @foreach ($copias as $value)
@@ -546,15 +538,14 @@
                     , p.s.c.
                 </p>
             @endforeach
+            <p class="copias">C.c.p. Archivo</p>
             <p class="copias">
-                C.c.p. Archivo</p>
-            <<p class="copias">
                 Dr. RVV/{{ $oficio?->area }}@if ($oficio?->proceso)
                     /{{ $oficio?->proceso }}
                 @endif
-                </p>
+            </p>
         </div>
-
+    </div>
 </body>
 
 </html>

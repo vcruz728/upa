@@ -35,6 +35,8 @@ use Illuminate\Support\Facades\Storage;
 use App\Support\FilenameSanitizer as FS;
 use App\Helpers\PdfHtml;
 
+
+
 class OficioController extends Controller
 {
 
@@ -1260,9 +1262,11 @@ class OficioController extends Controller
 	 * @param int $id ID del oficio a exportar.
 	 * @return \Illuminate\Http\Response Respuesta HTTP con el PDF generado para visualización.
 	 */
-	public function exportapdf($id, $guarda = 0)
+	public function exportapdf(Request $request, int $id, int $guarda = 0)
 	{
+		// 1) Datos base
 		$respuesta = RespuestaOficio::where('id_oficio', $id)->first();
+		$of        = Oficio::find($id);
 
 		$fecha = $respuesta?->fecha_respuesta ?: date('Y-m-d');
 		setlocale(LC_TIME, 'es_ES.UTF-8', 'Spanish_Spain.1252');
@@ -1274,11 +1278,16 @@ class OficioController extends Controller
 
 		$copias = Copia::where('id_oficio', $id)->get();
 
-		$oficio = Oficio::select('users.iniciales as area', 'u.iniciales as proceso', 'cat_areas.siglas')
+		$ofInfo = Oficio::select(
+			'users.iniciales as area',
+			'u.iniciales as proceso',
+			'cat_areas.siglas'
+		)
 			->leftJoin('users', fn($j) => $j->on('users.rol', '=', DB::raw("3"))->on('users.id_area', '=', 'oficios.area'))
-			->leftJoin('users as u', fn($j) => $j->on('u.rol', '=', DB::raw("4"))->on('u.id', '=', 'oficios.id_usuario'))
+			->leftJoin('users as u', fn($j) => $j->on('u.rol',   '=', DB::raw("4"))->on('u.id',        '=', 'oficios.id_usuario'))
 			->join('cat_areas', 'cat_areas.id', 'oficios.area')
-			->where('oficios.id', $id)->first();
+			->where('oficios.id', $id)
+			->first();
 
 		$tipoUsuario = match ($respuesta?->tipo_destinatario) {
 			'Externo' => 2,
@@ -1286,34 +1295,117 @@ class OficioController extends Controller
 			default   => 1,
 		};
 
-		// 👉 “Pdfifica” el HTML del editor (rutas locales + centrado)
-		$contenidoPdf = PdfHtml::pdfifySunEditorHtml($respuesta->respuesta ?? '');
-		$contenidoPdf = PdfHtml::absolutizePublicStorage($contenidoPdf); // 👈
-		\Log::debug('HTML PDF', ['html' => $contenidoPdf]);
+		// 2) HTML del editor → apto para Dompdf + URLs absolutas
+		$respRaw      = (string)($respuesta->respuesta ?? '');
+		$contenidoPdf = PdfHtml::pdfifySunEditorHtml($respRaw);
+		$contenidoPdf = PdfHtml::absolutizePublicStorage($contenidoPdf);
 
-		$pdf = Pdf::loadView('Oficios.Vice', [
-			'respuesta'     => $respuesta,
-			'copias'        => $copias,
-			'oficio'        => $oficio,
-			'fechaEscrita'  => $fechaEscrita,
-			'tipo_usuario'  => $tipoUsuario,
-			'contenidoPdf'  => $contenidoPdf,   // 👈 pásalo a la vista
-		])->setPaper('letter', 'portrait');
+		// 3) Clave de caché robusta
+		$versionPlantilla = 'v2'; // súbela si cambias la Blade
+		$respHash   = sha1($respRaw);
+		$htmlHash   = sha1($contenidoPdf);
+		$copiasHash = sha1($copias->map(fn($c) => [
+			'n' => $c->nombre,
+			'c' => $c->cargo,
+			'd' => $c->dependencia,
+			'u' => optional($c->updated_at)->timestamp,
+		])->toJson());
 
-		if ($guarda == 1) {
-			$ruta = 'pdfs_oficios/oficio_' . $id . '_' . now()->format('YmdHis') . '.pdf';
-			\Storage::disk('files')->put($ruta, $pdf->output());
-			return $ruta;
+		$stamp = implode('|', [
+			$versionPlantilla,
+			"id:$id",
+			"tipo:$tipoUsuario",
+			'of_up:'   . optional($of?->updated_at)->timestamp,
+			'resp_up:' . optional($respuesta?->updated_at)->timestamp,
+			'resp_hash:' . $respHash,
+			'html_hash:' . $htmlHash,
+			'copias:'    . $copiasHash,
+			'fecha:'     . $fechaEscrita,
+			'area:' . ($ofInfo->area ?? ''),
+			'proc:' . ($ofInfo->proceso ?? ''),
+			'sig:'  . ($ofInfo->siglas ?? ''),
+		]);
+
+		$key   = sha1($stamp);
+		$etag  = '"' . $key . '"';
+		$rel   = "pdf_cache/oficio_{$id}_{$key}.pdf";
+		$disk  = Storage::disk('local');
+		$disk->makeDirectory('pdf_cache');
+		$abs   = $disk->path($rel);
+
+		// 4) Bypass de caché vía query (vista previa o impresión)
+		$skipCache = ($request->query('nocache') === '1') || $request->has('_print_ts');
+
+		// 5) Servir desde caché si existe y no piden bypass
+		if (!$skipCache && $disk->exists($rel) && is_file($abs)) {
+			clearstatcache(true, $abs);
+			$mtime   = @filemtime($abs) ?: time();
+			$lastMod = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+
+			if (
+				$request->headers->get('If-None-Match') === $etag
+				|| $request->headers->get('If-Modified-Since') === $lastMod
+			) {
+				return response('', 304, [
+					'ETag'          => $etag,
+					'Last-Modified' => $lastMod,
+					'Cache-Control' => 'public, max-age=86400',
+				]);
+			}
+
+			$bytes = file_get_contents($abs);
+			if ($guarda === 1) {
+				$dest = 'pdfs_oficios/oficio_' . $id . '_' . now()->format('YmdHis') . '.pdf';
+				Storage::disk('files')->put($dest, $bytes);
+				return $dest;
+			}
+
+			return response($bytes, 200, [
+				'Content-Type'        => 'application/pdf',
+				'Content-Disposition' => 'inline; filename="respuesta_oficio.pdf"',
+				'Cache-Control'       => 'public, max-age=86400',
+				'ETag'                => $etag,
+				'Last-Modified'       => $lastMod,
+			]);
 		}
 
-		return response($pdf->output(), 200, [
+		// 6) Generar el PDF (imágenes remotas habilitadas)
+		$pdf = Pdf::setOptions([
+			'dpi'                  => 96,
+			'isHtml5ParserEnabled' => true,
+			'isRemoteEnabled'      => true,           // 👈 habilita imágenes HTTP/HTTPS
+			'chroot'               => public_path(),  // 👈 restringe descargas a /public
+		])->loadView('Oficios.Vice', [
+			'respuesta'     => $respuesta,
+			'copias'        => $copias,
+			'oficio'        => $ofInfo,
+			'fechaEscrita'  => $fechaEscrita,
+			'tipo_usuario'  => $tipoUsuario,
+			'contenidoPdf'  => $contenidoPdf,
+		])->setPaper('letter', 'portrait');
+
+		$bytes = $pdf->output();
+
+		// 7) Guardar en caché local
+		$disk->put($rel, $bytes);
+		clearstatcache(true, $abs);
+		$mtime   = @filemtime($abs) ?: time();
+		$lastMod = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+
+		if ($guarda === 1) {
+			$dest = 'pdfs_oficios/oficio_' . $id . '_' . now()->format('YmdHis') . '.pdf';
+			Storage::disk('files')->put($dest, $bytes);
+			return $dest;
+		}
+
+		return response($bytes, 200, [
 			'Content-Type'        => 'application/pdf',
 			'Content-Disposition' => 'inline; filename="respuesta_oficio.pdf"',
-			// Permitir embeber en el mismo origen
-			// 'X-Frame-Options' => 'SAMEORIGIN',
+			'Cache-Control'       => 'public, max-age=86400',
+			'ETag'                => $etag,
+			'Last-Modified'       => $lastMod,
 		]);
 	}
-
 	public function uploadFiles(Request $request, $id)
 	{
 		@ini_set('upload_max_filesize', '30M');

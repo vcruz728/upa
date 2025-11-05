@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Helpers\PdfHtml;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
+
 
 class NuevoController extends Controller
 {
@@ -136,9 +138,9 @@ class NuevoController extends Controller
 		]);
 	}
 
-	public function exportapdf($id, $id_usuario, $tipo_usuario)
+	public function exportapdf(\Illuminate\Http\Request $request, $id, $id_usuario, $tipo_usuario)
 	{
-		// Fecha (con fallback a hoy y mes en español)
+		// ===== 1) Datos como ya los traías =====
 		$of = Nuevo::findOrFail($id);
 		$fecha = $of->fecha_envio ?: date('Y-m-d');
 
@@ -160,7 +162,6 @@ class NuevoController extends Controller
 			->where('nuevos_oficios.id', $id)
 			->first();
 
-		// Tabla depende del tipo de usuario (1 = interno, 2 = externo)
 		$tabla = ((int)$tipo_usuario === 1) ? 'directorios' : 'cat_destinatarios_externos';
 
 		$respuesta = Nuevo::select(
@@ -184,25 +185,142 @@ class NuevoController extends Controller
 			$respuesta->oficio_respuesta = $respuesta->folio;
 		}
 
-		// 🔵 "Pdfificar" el HTML del editor (rutas locales + sin float, respeta izq/centro/der)
+		// HTML del editor adaptado a Dompdf
 		$contenidoPdf = PdfHtml::pdfifySunEditorHtml($respuesta->respuesta ?? '');
-		$contenidoPdf = PdfHtml::absolutizePublicStorage($contenidoPdf); // 👈
-		\Log::debug('HTML PDF (Nuevo)', ['html' => $contenidoPdf]);
+		$contenidoPdf = PdfHtml::absolutizePublicStorage($contenidoPdf);
 
-		$pdf = Pdf::loadView('Oficios.Vice', [
+		// ===== 2) Clave de caché (lo mínimo necesario) =====
+		// ===== 2) Clave de caché =====
+		// ===== 2) Clave de caché robusta =====
+		// ===== 2) Clave de caché robusta =====
+		$versionPlantilla = 'v2';
+
+		// Pivot y destinatario
+		$destPivot = DB::table('destinatarios_oficio')
+			->where('id_oficio', $id)
+			->where('id_usuario', (int)$id_usuario)
+			->where('tipo_usuario', (int)$tipo_usuario)
+			->whereNull('deleted_at')           // 👈
+			->first();
+
+		$destRow = DB::table($tabla)
+			->where('id', (int)$id_usuario)
+			->select('nombre', 'cargo', 'dependencia', 'updated_at')
+			->first();
+
+		// Timestamps seguros desde strings
+		$u1 = $destRow?->updated_at   ? strtotime($destRow->updated_at)   : null;
+		$u2 = $destPivot?->updated_at ? strtotime($destPivot->updated_at) : null;
+
+		// Hash destinatario y copias
+		$destHash = sha1(json_encode([
+			'n'  => $destRow->nombre ?? null,
+			'c'  => $destRow->cargo ?? null,
+			'd'  => $destRow->dependencia ?? null,
+			'u1' => $u1,
+			'u2' => $u2,
+		]));
+
+		$copiasHash = sha1(collect($copias)->map(function ($c) {
+			return [
+				'n' => $c->nombre,
+				'c' => $c->cargo,
+				'd' => $c->dependencia,
+				'u' => optional($c->updated_at)->timestamp, // Eloquent -> Carbon
+			];
+		})->toJson());
+
+		// Oficio No. y contenido
+		$respNo   = $respuesta ? ($respuesta->oficio_respuesta ?? $respuesta->folio) : null;
+		$respRaw  = (string)($respuesta->respuesta ?? $of->respuesta ?? '');
+		$respHash = sha1($respRaw);
+		$htmlHash = sha1($contenidoPdf);
+
+		// Firma final
+		$stamp = implode('|', [
+			$versionPlantilla,
+			"id:$id",
+			"tipo:$tipo_usuario",
+			"usr:$id_usuario",
+			'of_up:' . optional($of->updated_at)->timestamp,
+			'resp_hash:' . $respHash,
+			'html_hash:' . $htmlHash,
+			'anio:' . date('Y'),
+			'fecha:' . $fechaEscrita,
+			'area:' . $oficio->area,
+			'proc:' . $oficio->proceso,
+			'sig:' . $oficio->siglas,
+			'dest:' . $destHash,
+			'copias:' . $copiasHash,
+			'respno:' . $respNo,
+		]);
+
+		$key   = sha1($stamp);
+		$etag  = '"' . $key . '"';
+
+		$rel   = "pdf_cache/oficio_{$id}_{$tipo_usuario}_{$id_usuario}_{$key}.pdf";
+		$disk  = \Storage::disk('local');
+		$disk->makeDirectory('pdf_cache');
+		$abs   = $disk->path($rel);
+
+		// Bypass desde el front
+		$skipCache = ($request->query('nocache') === '1') || $request->has('_print_ts');
+
+		// Servir caché
+		$hasCache = !$skipCache && $disk->exists($rel) && file_exists($abs);
+		if ($hasCache) {
+			clearstatcache(true, $abs);
+			$mtime   = @filemtime($abs) ?: time();
+			$lastMod = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+
+			if (
+				$request->headers->get('If-None-Match') === $etag
+				|| $request->headers->get('If-Modified-Since') === $lastMod
+			) {
+				return response('', 304, [
+					'ETag'          => $etag,
+					'Last-Modified' => $lastMod,
+					'Cache-Control' => 'public, max-age=86400',
+				]);
+			}
+
+			return response()->file($abs, [
+				'Content-Type'        => 'application/pdf',
+				'Content-Disposition' => 'inline; filename="respuesta_oficio.pdf"',
+				'Cache-Control'       => 'public, max-age=86400',
+				'ETag'                => $etag,
+				'Last-Modified'       => $lastMod,
+			]);
+		}
+
+		// ===== 5) Generar y guardar =====
+		$pdf = \Barryvdh\DomPDF\Facade\Pdf::setOptions([
+			'dpi'                    => 96,
+			'enable_font_subsetting' => true,
+			'isHtml5ParserEnabled'   => true,
+			'isRemoteEnabled'        => true,  // 👈 habilita HTTP/HTTPS
+			'chroot'                 => public_path(),     // 👈 restringe a /public
+		])->loadView('Oficios.Vice', [
 			'respuesta'     => $respuesta,
 			'copias'        => $copias,
 			'oficio'        => $oficio,
 			'fechaEscrita'  => $fechaEscrita,
 			'tipo_usuario'  => (int)$tipo_usuario,
-			'contenidoPdf'  => $contenidoPdf,   // 👈 importante: la vista debe usar esto
+			'contenidoPdf'  => $contenidoPdf,
 		])->setPaper('letter', 'portrait');
 
-		return response($pdf->output(), 200, [
+		$disk->put($rel, $pdf->output());
+		$abs     = $disk->path($rel);
+		clearstatcache(true, $abs);
+		$mtime   = @filemtime($abs) ?: time();
+		$lastMod = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+
+		return response()->file($abs, [
 			'Content-Type'        => 'application/pdf',
 			'Content-Disposition' => 'inline; filename="respuesta_oficio.pdf"',
-			// Permitir embeber en el mismo origen
-			// 'X-Frame-Options' => 'SAMEORIGIN',
+			'Cache-Control'       => 'public, max-age=86400',
+			'ETag'                => $etag,
+			'Last-Modified'       => $lastMod,
 		]);
 	}
 

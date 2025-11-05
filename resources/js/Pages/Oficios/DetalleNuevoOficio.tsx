@@ -186,7 +186,7 @@ export default function DetalleNuevoOficio({
                                                             <Button
                                                                 className="btn-icon ml-1"
                                                                 variant="danger"
-                                                                title="Ver oficiosss"
+                                                                title="Ver oficio"
                                                                 onClick={() => {
                                                                     setPdf(
                                                                         `imprime/nuevo/pdf/${id}/${row.id_usuario}/${row.tipo_usuario}`

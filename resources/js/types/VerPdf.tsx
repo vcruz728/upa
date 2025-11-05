@@ -29,14 +29,22 @@ const VerPdf = ({ urlPdf, show, setShow, tipo = "pdf" }: Props) => {
     const printingOpenRef = useRef(false);
     const fullScreenTargetRef = useRef<HTMLDivElement | null>(null);
     const zoomPluginInstance = zoomPlugin();
+    const [ver, setVer] = useState<number>(0);
+    useEffect(() => {
+        if (show) setVer(Date.now());
+    }, [show]);
 
     const fileUrl = useMemo(() => {
         const raw = (urlPdf || "").trim();
-        if (/^https?:\/\//i.test(raw)) return raw;
-        if (raw.startsWith("/")) return getFullUrl(raw);
-        if (raw.startsWith("files/")) return getFullUrl("/" + raw);
-        return getFullUrl(`/files/${raw}`);
-    }, [urlPdf]);
+        const base = /^https?:\/\//i.test(raw)
+            ? raw
+            : raw.startsWith("/")
+            ? getFullUrl(raw)
+            : raw.startsWith("files/")
+            ? getFullUrl("/" + raw)
+            : getFullUrl(`/files/${raw}`);
+        return base + (base.includes("?") ? "&" : "?") + "_v=" + ver; // 👈
+    }, [urlPdf, ver]);
 
     // Un solo iframe oculto para imprimir
     function ensurePrintFrame() {

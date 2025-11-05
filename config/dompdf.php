@@ -46,7 +46,7 @@ return [
          * Symbol, ZapfDingbats.
          */
         'font_dir' => storage_path('fonts'), // advised by dompdf (https://github.com/dompdf/dompdf/pull/782)
-
+        'dpi' => 96,
         /**
          * The location of the DOMPDF font cache directory
          *
@@ -86,7 +86,7 @@ return [
         // rutas de trabajo/caché
         'font_dir'   => storage_path('fonts/'),
         'font_cache' => storage_path('fonts/'),
-        'temp_dir'   => storage_path('app/tmp'),
+        'temp_dir'   => storage_path('app/temp'),
         /**
          * Protocol whitelist
          *
@@ -117,7 +117,7 @@ return [
         /**
          * Whether to enable font subsetting or not.
          */
-        'enable_font_subsetting' => false,
+        'enable_font_subsetting' => true,
 
         /**
          * The PDF rendering backend to use

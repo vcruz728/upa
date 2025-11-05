@@ -144,7 +144,7 @@ export default function SubeConfirmacion({
                                                     <Button
                                                         className="btn-icon mr-1"
                                                         variant="danger"
-                                                        title="Ver oficiosss"
+                                                        title="Ver oficio"
                                                         onClick={() => {
                                                             setPdf(
                                                                 `imprime/nuevo/pdf/${id}/${row.id_usuario}/${row.tipo_usuario}`

@@ -1627,7 +1627,7 @@ export default function Nuevo({
                                                                                 <Button
                                                                                     className="btn-icon ml-1"
                                                                                     variant="primary"
-                                                                                    title="Ver oficiosss"
+                                                                                    title="Ver oficio"
                                                                                     onClick={() => {
                                                                                         setVariables(
                                                                                             {

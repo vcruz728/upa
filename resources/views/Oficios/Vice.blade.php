@@ -325,7 +325,7 @@
         }
 
         .footer-right {
-            border-left: 2pt solid #122348 !important;
+            border-left: 2pt solid #a7a6ab !important;
             /* fuerza el palito */
             padding-left: 7px;
             vertical-align: top;

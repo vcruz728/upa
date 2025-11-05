@@ -298,8 +298,12 @@ class NuevoController extends Controller
 			'dpi'                    => 96,
 			'enable_font_subsetting' => true,
 			'isHtml5ParserEnabled'   => true,
-			'isRemoteEnabled'        => true,  // 👈 habilita HTTP/HTTPS
-			'chroot'                 => public_path(),     // 👈 restringe a /public
+			'isRemoteEnabled'        => false,
+			// 👇 rutas críticas
+			'fontDir'   => storage_path('fonts'),
+			'fontCache' => storage_path('fonts'),
+			'tempDir'   => storage_path('app/dompdf_temp'),
+			'chroot'    => base_path(),
 		])->loadView('Oficios.Vice', [
 			'respuesta'     => $respuesta,
 			'copias'        => $copias,

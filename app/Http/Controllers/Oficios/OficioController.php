@@ -1371,10 +1371,15 @@ class OficioController extends Controller
 
 		// 6) Generar el PDF (imágenes remotas habilitadas)
 		$pdf = Pdf::setOptions([
-			'dpi'                  => 96,
-			'isHtml5ParserEnabled' => true,
-			'isRemoteEnabled'      => true,           // 👈 habilita imágenes HTTP/HTTPS
-			'chroot'               => public_path(),  // 👈 restringe descargas a /public
+			'dpi'                    => 96,
+			'enable_font_subsetting' => true,
+			'isHtml5ParserEnabled'   => true,
+			'isRemoteEnabled'        => false,
+			// 👇 rutas críticas
+			'fontDir'   => storage_path('fonts'),
+			'fontCache' => storage_path('fonts'),
+			'tempDir'   => storage_path('app/dompdf_temp'),
+			'chroot'    => base_path(),
 		])->loadView('Oficios.Vice', [
 			'respuesta'     => $respuesta,
 			'copias'        => $copias,

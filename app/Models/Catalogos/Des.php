@@ -11,6 +11,6 @@ class Des extends Model
     protected $table = 'cat_des';
 
     public static  function getSel(){
-    	return self::select('id as value','nombre as label')->orderBy('nombre')->get();
+    	return self::select('id as value','nombre as label')->where('dependencia', 1)->orWhere('ua',1)->orderBy('nombre')->get();
     }
 }

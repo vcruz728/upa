@@ -97,6 +97,26 @@
             padding: 0 !important;
             padding-left: 6px !important;
         }
+
+        .sello-movil {
+            position: absolute;
+            top: 45px;
+            left: 120px;
+            width: 19%;
+            z-index: 100000;
+            pointer-events: none; /* Opcional: para que no bloquee el texto */
+            
+        }
+
+        .firma-movil {
+            position: absolute;
+            top: 53px;
+            left: 0px;
+            width: 30%;
+            z-index: 100000;
+            pointer-events: none; /* Opcional: para que no bloquee el texto */
+            
+        }
     </style>
 </head>
 <body>
@@ -135,7 +155,7 @@
         </div>
     <br><br>
     <!--  contenifo -->
-        
+
         {!! $respuesta?->respuesta ?? '' !!}
     <!--  termina contenido -->
       <br>
@@ -146,18 +166,21 @@
 
         <br>
         <br>
-    
-        <p style="font-family: 'SourceSansPro';">Atentamente</p>
-        <p style="font-family: 'SourceSansPro';">“Pensar bien, para vivir mejor”</p>
-        <p style="font-family: 'SourceSansPro';">H. Puebla de Zaragoza a {{ $fechaEscrita }}</p>
-    
-        <br>
-        <br>
-        <br>
-        <br>
-    
-        <p style="font-family: 'SourceSansPro';">Dr. José Jaime Vázquez López</p>
-        <p style="font-family: 'SourceSansPro';">Vicerrector de Docencia</p>
+        <div style="position: relative; page-break-inside: avoid;">
+            <p style="font-family: 'SourceSansPro';">Atentamente</p>
+            <p style="font-family: 'SourceSansPro';">“Pensar bien, para vivir mejor”</p>
+            <p style="font-family: 'SourceSansPro';">H. Puebla de Zaragoza a {{ $fechaEscrita }}</p>
+            
+            <br>
+            <br>
+            <br>
+            <br>
+            
+            <p style="font-family: 'SourceSansPro';">Dr. José Jaime Vázquez López</p>
+            <p style="font-family: 'SourceSansPro';">Vicerrector de Docencia</p>
+            <img src="{{ public_path('img/sello.png') }}" class="sello-movil" />
+            <img src="{{ public_path('img/firma.png') }}" class="firma-movil" />
+        </div>
     
 
 

@@ -511,6 +511,16 @@ export default function Recepcion({
                                                             width: "10%",
                                                         },
                                                         {
+                                                            data: "des",
+                                                            title: "Ingreso",
+                                                            width: "10%",
+                                                        },
+                                                        {
+                                                            data: "destinatario",
+                                                            title: "Destinatario",
+                                                            width: "10%",
+                                                        },
+                                                        {
                                                             data: "numero_oficio",
                                                             title: "No. Oficio / Folio",
                                                             width: "5%",

@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rechazo de oficio</title>
 </head>
+
 <body style="font-family: 'Poppins', Arial, sans-serif">
     <table width="100%" border="0" cellspacing="0" cellpadding="0">
         <tr>
             <td align="center" style="padding: 20px;">
-                <table class="content" width="600" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse; border: 1px solid #cccccc;">
+                <table class="content" width="600" border="0" cellspacing="0" cellpadding="0"
+                    style="border-collapse: collapse; border: 1px solid #cccccc;">
                     <!-- Header -->
                     <tr>
-                        <td class="header" style="background-color: #122e48; padding: 40px; text-align: center; color: white; font-size: 24px;">
-                        Sistema Administrativo VD
+                        <td class="header"
+                            style="background-color: #122e48; padding: 40px; text-align: center; color: white; font-size: 24px;">
+                            Sistema Administrativo UPA
                         </td>
                     </tr>
 
                     <!-- Body -->
                     <tr>
                         <td class="body" style="padding: 40px; text-align: left; font-size: 16px; line-height: 1.6;">
-                        {{ $jefe }} <br>
-                        Le notificamos que el colaborador {{ $colaborador }} ah dado respuesta al oficio con número de folio/oficio: {{ $folio }}
-                        <br><br>
+                            {{ $jefe }} <br>
+                            Le notificamos que el colaborador {{ $colaborador }} ah dado respuesta al oficio con número
+                            de folio/oficio: {{ $folio }}
+                            <br><br>
                             Ingrese al sistema para aceptar o rechazar la respuesta del colaborador.
                         </td>
                     </tr>
@@ -33,8 +38,11 @@
                             <!-- CTA Button -->
                             <table cellspacing="0" cellpadding="0" style="margin: auto;">
                                 <tr>
-                                    <td align="center" style="background-color: #345C72; padding: 10px 20px; border-radius: 5px;">
-                                        <a href="{{ url('/oficios/revisa-respuesta/'.$id_oficio) }}" target="_blank" style="color: #ffffff; text-decoration: none; font-weight: bold;">Ver respuesta</a>
+                                    <td align="center"
+                                        style="background-color: #345C72; padding: 10px 20px; border-radius: 5px;">
+                                        <a href="{{ url('/oficios/revisa-respuesta/' . $id_oficio) }}" target="_blank"
+                                            style="color: #ffffff; text-decoration: none; font-weight: bold;">Ver
+                                            respuesta</a>
                                     </td>
                                 </tr>
                             </table>
@@ -42,13 +50,14 @@
                     </tr>
                     <tr>
                         <td class="body" style="padding: 40px; text-align: left; font-size: 16px; line-height: 1.6;">
-                            
+
                         </td>
                     </tr>
                     <!-- Footer -->
                     <tr>
-                        <td class="footer" style="background-color: #122e48; padding: 40px; text-align: center; color: white; font-size: 14px;">
-                        BUAP - Vicerrectoría de Docencia
+                        <td class="footer"
+                            style="background-color: #122e48; padding: 40px; text-align: center; color: white; font-size: 14px;">
+                            BUAP - Vicerrectoría de Docencia
                         </td>
                     </tr>
                 </table>
@@ -56,4 +65,5 @@
         </tr>
     </table>
 </body>
+
 </html>

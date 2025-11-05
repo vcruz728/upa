@@ -315,9 +315,11 @@
 </head>
 
 <body>
-    <!-- <img src="{{ public_path('img/minerva_gris.png') }}" class="background" />  descomentar cuando no haya hojas membretadas -->
+    <img src="{{ public_path('img/minerva_gris.png') }}" class="background" />
+    <!--  descomentar cuando no haya hojas membretadas -->
     <header>
-        <!-- <img src="{{ public_path('img/minver_buap_azul.png') }}" width="100" >  descomentar cuando no haya hojas membretadas -->
+        <img src="{{ public_path('img/minver_buap_azul.png') }}" width="100">
+        <!-- descomentar cuando no haya hojas membretadas -->
     </header>
     <footer>
         <div
@@ -327,7 +329,7 @@
                 <tr>
                     <td
                         style="text-align: right; width: 90px;  vertical-align: top; padding-right: 0 !important; border: none !important; line-height: 0.8 !important;">
-                        Vicerrectoria<br>de Docencia
+                        Universidad<br>para Adultos
                     </td>
                     <td style=" vertical-align: middle; text-align: center; border: none !important;">
                         <div
@@ -336,10 +338,9 @@
                     </td>
                     <td
                         style="text-align: left;  vertical-align: top; padding-left: 7px !important; border: none !important; line-height: 0.8 !important;">
-                        4to. piso de la Torre de Gestión<br>
-                        Académica y servicios Administrativos,<br>
-                        Ciudad Universitaría, Puebla, Pue.<br>
-                        Tel. 222 229 55 00, Ext. 3553 y 5900
+                        11 sur 4701. Col. Reforma Agua Azul<br>
+                        C.P. 72430 Puebla, Pue.<br>
+                        Teléfono: 229 5500, Ext. 1653 y 1602
                     </td>
                 </tr>
             </table>
@@ -504,8 +505,7 @@
 
 
         <p class="generales" style="font-style: italic; line-height: 1;">De antemano agradezco su atención y le reitero
-            la
-            seguridad de mi más distinguida consideración.</p>
+            la seguridad de mi más distinguida consideración.</p>
 
 
         <br>
@@ -523,8 +523,8 @@
 
 
 
-            <p class="firma">Dr. José Jaime Vázquez López</p>
-            <p class="firma">Vicerrector de Docencia</p>
+            <p style="font-family: 'SourceSansPro';">Mtro. Ricardo Valderrama Valdez</p>
+            <p style="font-family: 'SourceSansPro';">Director</p>
             <!-- Descomentart si ya quieren sello y firma
             <img src="{{ public_path('img/sello.png') }}" class="sello-movil" />
             <img src="{{ public_path('img/firma.png') }}" class="firma-movil" />
@@ -549,7 +549,7 @@
             <p class="copias">
                 C.c.p. Archivo</p>
             <<p class="copias">
-                Dr.JJVL/{{ $oficio?->area }}@if ($oficio?->proceso)
+                Dr. RVV/{{ $oficio?->area }}@if ($oficio?->proceso)
                     /{{ $oficio?->proceso }}
                 @endif
                 </p>

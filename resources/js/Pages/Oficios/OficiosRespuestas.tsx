@@ -2861,7 +2861,7 @@ td.col-semaforo.dtr-control::after{
                                         </Tab>
                                         <Tab
                                             eventKey="tab5"
-                                            title="OficiosUPAHistórico"
+                                            title="Oficios UPA Histórico"
                                         >
                                             <Col md={12}>
                                                 <div className="mb-3 d-flex justify-content-end">

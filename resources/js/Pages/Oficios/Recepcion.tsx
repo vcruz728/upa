@@ -1991,10 +1991,10 @@ export default function Recepcion({
                                             </Col>
                                         </Tab>
 
-                                        {/* ============ OFICIOSUPAHISTÓRICO ============ */}
+                                        {/* ============ Oficios UPA Histórico ============ */}
                                         <Tab
                                             eventKey="tab5"
-                                            title="OficiosUPAHistórico"
+                                            title="Oficios UPA Histórico"
                                         >
                                             <Col
                                                 md={12}

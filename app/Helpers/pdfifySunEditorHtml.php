@@ -4,7 +4,7 @@ namespace App\Helpers;
 
 use Illuminate\Support\Str;
 
-class PdfHtml
+class pdfifySunEditorHtml
 {
     public static function pdfifySunEditorHtml(?string $html): string
     {

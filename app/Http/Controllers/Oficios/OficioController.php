@@ -1035,46 +1035,103 @@ class OficioController extends Controller
 	}
 
 
-	public function aceptResp($id)
+	public function aceptResp(int $id)
 	{
 		$oficio = Oficio::find($id);
-		$folio = $oficio->ingreso == 'Email' ? $oficio->num_folio : $oficio->num_oficio;
-		$asis = User::where('rol', 5)->first();
+		if (!$oficio) {
+			Log::warning('aceptResp: Oficio no encontrado', ['id' => $id]);
+			return back()->with('error', 'El oficio no existe.');
+		}
 
-		if (\Auth::user()->rol == 5) {
-			$jefe = User::where('rol', 3)->where('id_area', $oficio->area)->first();
+		// Folio legible
+		$folio = $oficio->ingreso === 'Email'
+			? ($oficio->num_folio ?: "OFICIO-$id")
+			: ($oficio->num_oficio ?: "OFICIO-$id");
 
-			$oficio->enviado = 1;
-			$oficio->fecha_respuesta = date('Y-m-d H:i:s');
-			IBitacoraOficio($id, 'Respuesta enviada', 'Se ha enviado la respuesta del oficio', 'fa fa-send-o', 'primary');
+		// Posibles actores
+		$asis = User::where('rol', 5)->first(); // Asistente (opcional)
+		$usuario = $oficio->id_usuario ? infoUsuario($oficio->id_usuario) : null; // Puede venir NULL
 
-			$usuario = infoUsuario($oficio->id_usuario);
+		try {
+			if (Auth::user()?->rol == 5) {
+				// Rama: asistente envía respuesta al jefe de área
+				$jefe = User::where('rol', 3)->where('id_area', $oficio->area)->first();
 
+				$oficio->enviado         = 1;
+				$oficio->fecha_respuesta = now();
 
-			$rutaPDF = $this->exportapdf($id, 1);
-			$oficio->oficio_final = $rutaPDF;
+				// Bitácora
+				iBitacoraOficio(
+					$id,
+					'Respuesta enviada',
+					'Se ha enviado la respuesta del oficio',
+					'fa fa-send-o',
+					'primary'
+				);
 
-			$mail = Mail::to($jefe->email);
-			if (!empty($usuario)) {
-				$mail->cc($usuario->email);
+				// Generar y guardar PDF final (usa request() porque tu exportapdf lo pide)
+				try {
+					$rutaPDF = $this->exportapdf(request(), $id, 1);
+					$oficio->oficio_final = $rutaPDF;
+				} catch (\Throwable $e) {
+					Log::error('aceptResp: Error generando PDF final', ['id' => $id, 'e' => $e->getMessage()]);
+					// No abortamos el flujo; sólo seguimos sin adjuntar ruta.
+				}
+
+				// Envío de correo: sólo si hay destinatario
+				if ($jefe?->email) {
+					$mail = Mail::to($jefe->email);
+					if (!empty($usuario?->email)) {
+						$mail->cc($usuario->email);
+					}
+					// Usa later si tu cola está configurada; si no, puedes usar send()
+					$mail->later(now()->addSeconds(2), new Enviado($folio));
+				} else {
+					Log::warning('aceptResp: No hay jefe de área para enviar correo', [
+						'oficio_id' => $id,
+						'area'      => $oficio->area,
+					]);
+				}
+			} else {
+				// Rama: jefe autoriza la respuesta del colaborador
+				$oficio->finalizado = 1;
+
+				iBitacoraOficio(
+					$id,
+					'Se autorizó la respuesta',
+					'El jefe de área autorizó la respuesta del colaborador',
+					'fa fa-thumbs-o-up',
+					'success'
+				);
+
+				// Notificar a colaborador (si existe)
+				if (!empty($usuario?->email)) {
+					Mail::to($usuario->email)
+						->later(now()->addSeconds(1), new AceptaRespuestaJefe($usuario->name ?? 'Usuario', $folio));
+				} else {
+					Log::warning('aceptResp: Oficio sin usuario asignado para notificar', ['oficio_id' => $id]);
+				}
+
+				// Notificar a asistente (si existe)
+				if (!empty($asis?->email)) {
+					Mail::to($asis->email)
+						->later(now()->addSeconds(2), new MailRespuestaOficio($asis->name ?? 'Asistente', $folio, $id));
+				} else {
+					Log::warning('aceptResp: No hay asistente (rol=5) para notificar', ['oficio_id' => $id]);
+				}
 			}
-			$mail->later(now()->addSeconds(2), new Enviado($folio));
-		} else {
-			$usuario = infoUsuario($oficio->id_usuario);
-			$oficio->finalizado = 1;
-			iBitacoraOficio($id, 'Se autorizo la respuesta', 'El jefe de área autorizo la respuesta del colaborador', 'fa fa-thumbs-o-up', 'success');
-			Mail::to($usuario->email)->later(now()->addSeconds(1), new AceptaRespuestaJefe($usuario->name, $folio));
-			Mail::to($asis->email)->later(now()->addSeconds(2), new MailRespuestaOficio($asis->name, $folio, $id));
-		}
-		$oficio->save();
 
-		if (\Auth::user()->rol == 3) {
-			return to_route('misOficios');
-		} else {
-			return to_route('oficiosRespuestas');
+			$oficio->save();
+		} catch (\Throwable $e) {
+			Log::error('aceptResp: Error general', ['oficio_id' => $id, 'e' => $e->getMessage()]);
+			return back()->with('error', 'No fue posible procesar la acción. Revisa el log.');
 		}
+
+		// Redirección por rol
+		return (Auth::user()?->rol == 3)
+			? to_route('misOficios')
+			: to_route('oficiosRespuestas');
 	}
-
 	/*
 		Maneja el rechazo de una respuesta para un "Oficio".
 		

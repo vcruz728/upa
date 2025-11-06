@@ -343,7 +343,7 @@
             class="background" />
     @endif
 
-    {{-- Header (logo) --}}
+    {{-- Header (logo) comentar cuando haya hojas membretadas --}}
     <header>
         @if (!empty($logoDataUri))
             <img src="{{ $logoDataUri }}" width="100">
@@ -353,7 +353,7 @@
         @endif
     </header>
 
-    {{-- Footer estilizado --}}
+    {{-- Footer estilizado  comentar cuando haya hojas membretadas --}}
     <footer>
         <div class="footer-wrap">
             <table class="footer-table">

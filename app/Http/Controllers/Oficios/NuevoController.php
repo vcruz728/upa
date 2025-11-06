@@ -299,7 +299,6 @@ class NuevoController extends Controller
 			'enable_font_subsetting' => true,
 			'isHtml5ParserEnabled'   => true,
 			'isRemoteEnabled'        => false,
-			// 👇 rutas críticas
 			'fontDir'   => storage_path('fonts'),
 			'fontCache' => storage_path('fonts'),
 			'tempDir'   => storage_path('app/dompdf_temp'),
@@ -314,6 +313,12 @@ class NuevoController extends Controller
 		])->setPaper('letter', 'portrait');
 
 		$disk->put($rel, $pdf->output());
+		// 💡 Poda versiones antiguas del mismo oficio/destinatario
+		\App\Support\PdfCache::pruneSiblings(
+			(int) $id,
+			(int) $tipo_usuario,
+			(int) $id_usuario,
+		);
 		$abs     = $disk->path($rel);
 		clearstatcache(true, $abs);
 		$mtime   = @filemtime($abs) ?: time();

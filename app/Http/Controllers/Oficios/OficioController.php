@@ -33,6 +33,7 @@ use App\Helpers\TiempoHabil;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use App\Support\FilenameSanitizer as FS;
+use Illuminate\Support\Facades\Auth;
 use App\Helpers\PdfHtml;
 
 
@@ -1295,6 +1296,9 @@ class OficioController extends Controller
 			default   => 1,
 		};
 
+		// 🔑 Usuario "dueño" para separar cachés por actor
+		$idUsuario = (int) ($of?->id_usuario ?? Auth::id() ?? 0);
+
 		// 2) HTML del editor → apto para Dompdf + URLs absolutas
 		$respRaw      = (string)($respuesta->respuesta ?? '');
 		$contenidoPdf = PdfHtml::pdfifySunEditorHtml($respRaw);
@@ -1315,6 +1319,7 @@ class OficioController extends Controller
 			$versionPlantilla,
 			"id:$id",
 			"tipo:$tipoUsuario",
+			"usr:$idUsuario",
 			'of_up:'   . optional($of?->updated_at)->timestamp,
 			'resp_up:' . optional($respuesta?->updated_at)->timestamp,
 			'resp_hash:' . $respHash,
@@ -1328,7 +1333,9 @@ class OficioController extends Controller
 
 		$key   = sha1($stamp);
 		$etag  = '"' . $key . '"';
-		$rel   = "pdf_cache/oficio_{$id}_{$key}.pdf";
+
+
+		$rel   = "pdf_cache/oficio_{$id}_{$tipoUsuario}_{$idUsuario}_{$key}.pdf";
 		$disk  = Storage::disk('local');
 		$disk->makeDirectory('pdf_cache');
 		$abs   = $disk->path($rel);
@@ -1375,7 +1382,6 @@ class OficioController extends Controller
 			'enable_font_subsetting' => true,
 			'isHtml5ParserEnabled'   => true,
 			'isRemoteEnabled'        => false,
-			// 👇 rutas críticas
 			'fontDir'   => storage_path('fonts'),
 			'fontCache' => storage_path('fonts'),
 			'tempDir'   => storage_path('app/dompdf_temp'),
@@ -1393,6 +1399,14 @@ class OficioController extends Controller
 
 		// 7) Guardar en caché local
 		$disk->put($rel, $bytes);
+
+		// 💡 Poda versiones antiguas del mismo oficio/destinatario/usuario
+		\App\Support\PdfCache::pruneSiblings(
+			(int) $id,
+			(int) $tipoUsuario,
+			(int) $idUsuario
+		);
+
 		clearstatcache(true, $abs);
 		$mtime   = @filemtime($abs) ?: time();
 		$lastMod = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
@@ -1411,6 +1425,7 @@ class OficioController extends Controller
 			'Last-Modified'       => $lastMod,
 		]);
 	}
+
 	public function uploadFiles(Request $request, $id)
 	{
 		@ini_set('upload_max_filesize', '30M');
